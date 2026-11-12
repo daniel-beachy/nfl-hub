@@ -1,7 +1,7 @@
 # NFL Hub: build plan
 
 Written 2026-11-12 by Claude Fable 5.2 with Dan, for later build sessions (mostly Opus).
-Status: **plan awaiting Dan's review. No code exists yet.**
+Status: **plan approved by Dan on 2026-11-12. No code exists yet. Building starts when Dan says go.**
 
 Read this whole file before building anything. Tasks are tagged:
 
@@ -48,6 +48,9 @@ Nothing is reused from the old repos except the real 2026 snapshot data in `nfl-
 | Field charts | Zone based (depth by left/middle/right, run gaps). Free data has no per-play x/y coordinates. |
 | Seasons | 2020 onward for players and model backfill. |
 | Monitoring | Status page in the app, `status.json`, auto-opened GitHub issues, a runbook for Claude. |
+| Default source | Consensus (median of the betting markets) where present. |
+| Look and feel | Section 11 accepted as the starting point; reviewed with Dan when the first real UI exists (M1). |
+| QA | Independent agent QA passes before every checkpoint, per `docs/QA.md`. |
 | Old projects | Deprecated per section 12. |
 
 ## 4. Data sources (verified live on 2026-11-12)
@@ -338,7 +341,7 @@ Missing inputs degrade per metric: if Next Gen Stats is unavailable, those colum
 
 One reusable SVG `Field` component draws a football field section with yard lines and shades zones by a chosen metric relative to league average, on a diverging scale, with the count in each cell and a tap-through to detail. Passing and receiving use the depth grid above the line of scrimmage; rushing uses gap lanes at the line. It must read clearly at 360 px wide and in both themes. This is the visual signature of the hub, so it gets real design attention.
 
-## 11. Look and feel (pitch, to confirm at the M1 checkpoint)
+## 11. Look and feel (starting point, reviewed with Dan at M1)
 
 - Dark first, with a light theme; the choice persists. Dense but calm: a broadcast analytics desk, not a sportsbook.
 - Neutral surfaces; team colors carry meaning (lines, accents, the favorite team), always through the readable-color mapping.
@@ -357,13 +360,15 @@ One reusable SVG `Field` component draws a football field section with yard line
 | `NFL-NERD` | Fetch workflow disabled (was failing since Jan 1) | After M4 | Archive repo |
 | `nfl-season-tracker-v3` | **Still capturing weekly** so 2026 history has no gap | At the M1 checkpoint, once Dan accepts the hub's season view and the import is verified | Disable capture, replace the site with a one-line pointer to the hub, archive repo, replace its portfolio card with the hub's |
 | `fantasy-dashboard-v1` (Sunday HQ) | Untouched | Not part of this project | Future separate rebuild |
-| `fantasy-football-command-center-v1` | Untouched | Dan's call | Parked; archive if Dan agrees |
+| `fantasy-football-command-center-v1` | Untouched | With a general cleanup of Dan's repos | Archive |
 
 Archiving and unpublishing need Dan's go-ahead at the time. The vault notes for NFL Season Tracker, NFL Live Companion and NFL Visualized should be marked as superseded by NFL Hub; agents may only edit the NFL Hub note, so Dan does this or grants permission.
 
 ## 13. Milestones
 
 Each ends with a checkpoint where Dan uses the live site. Do not start a milestone before the previous checkpoint passes.
+
+**QA gate:** before each checkpoint, a separate QA session (Opus or Sonnet, not the session that built the code) runs that milestone's sections of `docs/QA.md` and writes a report to `docs/qa/`. Blockers and majors are fixed and re-checked before Dan is asked to look. Fable does not spend usage on QA.
 
 ### M0. Foundation (no visible features)
 
@@ -429,6 +434,7 @@ Checkpoint: Dan browses players.
 - Remaining deprecation steps in section 12 [O, with Dan's go-ahead].
 - Portfolio card per the portfolio repo's `AGENTS.md` [O].
 - README with honest data limitations [O].
+- Full `docs/QA.md` pass, all sections [QA agents].
 - One week of unattended running with no open issues, or with issues that were correctly raised.
 
 ## 14. Risks and open items
@@ -441,4 +447,3 @@ Checkpoint: Dan browses players.
 - **Live EPA accuracy.** Unknown until M2-3 measures it; the plan states the fallback.
 - **Kalshi coverage** for win totals and awards has not been checked market by market; M0-7 records what is really there.
 - **Things not verified in planning:** `hyparquet` against nflverse files; whether ESPN `wallclock` is close enough to broadcast time for calibration to feel right; Sunday HQ's logged-in flow (out of scope).
-- **To confirm with Dan:** the look and feel in section 11, and whether the Command Center repo gets archived.
