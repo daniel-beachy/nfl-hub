@@ -48,4 +48,7 @@ export const noHttp: Http = {
   getJson: async () => {
     throw new Error("tests must not use the network");
   },
+  getBytes: async () => {
+    throw new Error("tests must not use the network");
+  },
 };

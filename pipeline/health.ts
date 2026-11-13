@@ -1,6 +1,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { seasonForDate, type SourceTier } from "../shared/ids.ts";
+import { nflverseManifestSchema, type NflverseManifest } from "../shared/nflverse.ts";
 import { snapshotSchema, type Snapshot } from "../shared/snapshot.ts";
 import { STATUS_SCHEMA_VERSION, statusSchema, type SourceHealth, type StageHealth, type Status } from "../shared/status.ts";
 import { isMain, parseArgs, readJsonIfExists, REPO_ROOT, writeFileAtomic } from "./lib/files.ts";
@@ -52,11 +53,18 @@ export interface StatusInput {
   jobs?: Record<string, string>;
   previous?: Status;
   runUrl?: string | null;
+  /** The nflverse stage's last good manifest, from the derived branch. */
+  nflverse?: NflverseManifest;
+}
+
+/** The newest play-by-play file in an nflverse manifest. */
+function newestPbp(m: NflverseManifest | undefined) {
+  return m?.files.filter((f) => f.dataset === "pbp").sort((a, b) => (a.season ?? 0) - (b.season ?? 0)).at(-1);
 }
 
 /** Pure. Issue numbers are filled in afterwards by `syncIssues`. */
 export function computeStatus(input: StatusInput): Status {
-  const { adapters, snapshots, today, now, jobs = {}, previous } = input;
+  const { adapters, snapshots, today, now, jobs = {}, previous, nflverse } = input;
   const latest = snapshots.at(-1);
   const generatedAt = now.toISOString();
 
@@ -95,6 +103,11 @@ export function computeStatus(input: StatusInput): Status {
       const have = fresh ? `a snapshot for ${today} exists` : `no snapshot for ${today}; latest is ${latest?.date ?? "none"}`;
       detail = ok ? `snapshot for ${today} written` : `${have} (${detail})`;
     }
+    const pbp = newestPbp(nflverse);
+    if (id === "nflverse" && ok && nflverse && pbp) {
+      const waiting = nflverse.notPublished.length ? `; not yet published: ${nflverse.notPublished.join(", ")}` : "";
+      detail = `pbp ${pbp.season} updated ${pbp.updatedAt}; ${nflverse.files.length} files loaded${waiting}`;
+    }
     return { id, status: ok ? "ok" : "error", lastOk: ok ? generatedAt : (before?.lastOk ?? null), detail, issue: null };
   });
 
@@ -107,7 +120,10 @@ export function computeStatus(input: StatusInput): Status {
     season: seasonForDate(today),
     sources,
     stages,
-    dataFreshness: { snapshots: latest?.date ?? null },
+    dataFreshness: {
+      snapshots: latest?.date ?? null,
+      ...(nflverse && { pbp: newestPbp(nflverse)?.updatedAt.slice(0, 10) ?? null }),
+    },
     runUrl: input.runUrl ?? null,
   };
 }
@@ -220,7 +236,8 @@ if (isMain(import.meta.url)) {
     );
     const runUrl = env.GITHUB_RUN_ID ? `${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}` : null;
     const previous = statusSchema.safeParse(readJsonIfExists(out)).data;
-    const status = computeStatus({ adapters: ADAPTERS, snapshots, today, now, jobs, previous, runUrl });
+    const nflverse = nflverseManifestSchema.safeParse(readJsonIfExists(join(out, "..", "nflverse/manifest.json"))).data;
+    const status = computeStatus({ adapters: ADAPTERS, snapshots, today, now, jobs, previous, runUrl, nflverse });
 
     if (args["no-issues"] || !env.GITHUB_TOKEN || !env.GITHUB_REPOSITORY) {
       const planned = planIssues(status, { sources: [], stages: [] });

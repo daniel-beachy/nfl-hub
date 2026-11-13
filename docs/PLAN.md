@@ -88,7 +88,7 @@ Exact endpoints live in `docs/SOURCES.md` (task M0-9), one section per source wi
 ### 5.1 Stack
 
 - **App:** Vite, React, TypeScript, React Router with hash routing (no Pages 404 tricks). No CSS framework; CSS variables and CSS modules. Charts are our own SVG components on `d3-scale` and `d3-shape` (full control of the 32-line charts and field diagrams, and no chart-library upgrades to break).
-- **Pipeline:** TypeScript run with `tsx` on Node 24, in the same repo, sharing types and `zod` schemas with the app. Parquet read with `hyparquet`; if it cannot read an nflverse file, fall back to that release's `.csv.gz` asset (M0-8 proves which).
+- **Pipeline:** TypeScript run with `tsx` on Node 24, in the same repo, sharing types and `zod` schemas with the app. Parquet read with `hyparquet` (proved in M0-8: nflverse files are Snappy-compressed and read natively, so the `.csv.gz` fallback was not needed).
 - **Tests:** Vitest for units and adapter contract tests, Playwright for a small smoke suite at phone and desktop widths.
 - Keep runtime dependencies to roughly: `react`, `react-dom`, `react-router`, `d3-scale`, `d3-shape`, `zod`. Justify anything else in the PR.
 
@@ -385,10 +385,10 @@ Each ends with a checkpoint where Dan uses the live site. Do not start a milesto
 | M0-5 ✅ | `health.ts`, `status.json`, issue sync | F | Simulated outage opens an issue; recovery closes it |
 | M0-6 ✅ | `daily.yml` with independent jobs, `derived` branch publish, deploy that survives failed stages | F | A run with one job forced to fail still deploys with last good data |
 | M0-7 ✅ | Remaining adapters from the exemplar pattern: `draftkings`, `kalshi`, `bovada` | O | Each has a fixture and contract test and live coverage recorded in `docs/SOURCES.md` |
-| M0-8 | nflverse download module with asset caching; prove `hyparquet` or fall back to csv.gz | O | `pbp`, `stats_player`, `games`, `players` load for 2025 in CI |
+| M0-8 ✅ | nflverse download module with asset caching; prove `hyparquet` or fall back to csv.gz | O | `pbp`, `stats_player`, `games`, `players` load for 2025 in CI |
 | M0-9 | `docs/SOURCES.md`, `docs/RUNBOOK.md`, `npm run doctor`, `CLAUDE.md` | O | A fresh session can diagnose a broken fixture using only the runbook |
 
-M0-1 to M0-6 were finished on 2026-11-13 (✅), M0-7 the same day. Notes for M0-8 and M0-9 are in `pipeline/README.md`.
+M0-1 to M0-6 were finished on 2026-11-13 (✅), M0-7 and M0-8 the same day. Notes for M0-9 are in `pipeline/README.md`.
 
 Checkpoint: Dan sees a bare status page listing every source green, and three days of unattended captures.
 
@@ -452,4 +452,4 @@ Checkpoint: Dan browses players.
 - **Hub model quality.** It is a simple results-only model and will lag markets on injuries. It is labeled as a model and is one tab among several.
 - **Live EPA accuracy.** Unknown until M2-3 measures it; the plan states the fallback.
 - **Kalshi coverage** was checked in M0-7 (2026-11-13): every team metric, 1 seed and all seven awards, but no 2026 win totals. `docs/SOURCES.md` has the series list.
-- **Things not verified in planning:** `hyparquet` against nflverse files; whether ESPN `wallclock` is close enough to broadcast time for calibration to feel right; Sunday HQ's logged-in flow (out of scope).
+- **Things not verified in planning:** (`hyparquet` against nflverse files and the play-by-play column names were verified in M0-8); whether ESPN `wallclock` is close enough to broadcast time for calibration to feel right; Sunday HQ's logged-in flow (out of scope).

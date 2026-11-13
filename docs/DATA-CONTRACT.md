@@ -134,9 +134,31 @@ A source appears under a metric only if it has at least one value, so the app sh
     "coverage": {}, "issue": 14          // open GitHub issue number, or null
   } ],
   "stages": [ { "id": "capture", "status": "ok", "lastOk": "...", "detail": "...", "issue": null } ],
-  "dataFreshness": { "snapshots": "2026-11-13" },
+  "dataFreshness": { "snapshots": "2026-11-13", "pbp": "2026-11-13" },  // pbp: from the nflverse manifest
   "runUrl": "https://github.com/daniel-beachy/nfl-hub/actions/runs/..."
 }
 ```
 
 `overall` is `down` when a `core` source or a pipeline stage is failing, `degraded` when anything else is not `ok`, and `ok` otherwise.
+
+The `nflverse` stage's `detail` names the newest play-by-play file and when nflverse last rebuilt it, from the manifest below.
+
+## 5. nflverse manifest
+
+`shared/nflverse.ts`, written by `pipeline/nflverse/stage.ts` to `derived/nflverse/manifest.json` (served at `data/nflverse/manifest.json`) only when every file loaded and passed its checks. It records what the last good nflverse run loaded; the files themselves stay in the workflow cache, not on the derived branch.
+
+```jsonc
+{
+  "schemaVersion": 1, "generatedAt": "2026-11-13T21:24:01Z", "seasons": [2025, 2026],
+  "files": [ {
+    "dataset": "pbp",                    // pbp | stats_player | games | players
+    "season": 2026,                      // null for games and players (all seasons in one file)
+    "name": "play_by_play_2026.parquet", // the release asset
+    "updatedAt": "2026-11-13T17:11:44Z", // the asset's updated_at on GitHub
+    "size": 10197719, "rows": 24002
+  } ],
+  "notPublished": []                     // current-season files not out yet (normal before mid-September)
+}
+```
+
+Checks before the manifest is written: every column in the dataset's `required` list (`pipeline/nflverse/datasets.ts`) exists; the file has rows; a per-season file has no other season's rows; `games` reaches at least last season; `players` has at least 5,000 rows and 1,000 ESPN ids.

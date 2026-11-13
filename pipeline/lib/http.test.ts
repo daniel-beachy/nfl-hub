@@ -82,6 +82,14 @@ describe("http helper", () => {
     expect(await kindOf(slow.getJson(URL_OK, { timeoutMs: 5, attempts: 2 }))).toBe("timeout");
   });
 
+  test("bytes: returned as sent, with retries and the size cap", async () => {
+    const { client, calls } = http([new Response("busy", { status: 503 }), new Response(new Uint8Array([0, 255, 7]))]);
+    expect([...(await client.getBytes(URL_OK))]).toEqual([0, 255, 7]);
+    expect(calls[1]!.headers.accept).toBe("application/octet-stream");
+    expect(await kindOf(http([new Response(new Uint8Array(200))]).client.getBytes(URL_OK, { maxBytes: 100 }))).toBe("too-large");
+    expect(await kindOf(http([]).client.getBytes("https://evil.test/x"))).toBe("internal");
+  });
+
   test("head never exceeds 2 KB, even with multi-byte characters", () => {
     expect(Buffer.byteLength(head("é".repeat(5000)))).toBeLessThanOrEqual(2048);
     expect(head("short")).toBe("short");

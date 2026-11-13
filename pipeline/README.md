@@ -7,6 +7,8 @@ TypeScript run with `tsx`. The design is in `docs/PLAN.md` sections 5 to 7; the 
 | `npm run capture` | Run every source that is not ok yet today and write `data/snapshots/{season}/{date}.json` |
 | `npm run capture -- --source kalshi --dry-run` | Run one source and print its block; writes nothing |
 | `npm run fixture -- kalshi` | Record today's real payload and expected result as a test fixture |
+| `npm run nflverse` | Download changed nflverse files into `cache/nflverse/`, check them, write `derived/nflverse/manifest.json` |
+| `npm run nflverse -- --seasons 2020-2026 --datasets pbp --dry-run` | Same for some seasons or datasets; `--dry-run` writes no manifest |
 | `npm run health -- --no-issues` | Write `derived/status.json` without touching GitHub issues |
 | `npm run check` | Typecheck, lint, tests, build. Run before every commit |
 
@@ -37,6 +39,10 @@ American odds to implied probability: `+500` is `100 / (500 + 100)`, `-150` is `
 ## What the providers look like
 
 `docs/SOURCES.md` has every source's requests, the fields read, its coverage on the day it was built and what has gone wrong before. Shared helpers for sportsbooks and exchanges (American odds, team codes, settlement season, fetching several parts where one failure only makes the block `partial`) are in `sources/odds.ts`.
+
+## nflverse
+
+`nflverse/stage.ts` is the stage; `nflverse/datasets.ts` lists the files and the columns later stages rely on. A later stage that needs nflverse data calls `loadDataset(http, DATASETS.pbp, 2025, columns)`: it reuses the cache, downloads only if the asset changed, and throws naming any missing column. Add a column to a dataset's `required` list when a stage starts depending on it, so a rename by nflverse fails loudly in this stage rather than quietly downstream.
 
 ## Derived data and later stages
 

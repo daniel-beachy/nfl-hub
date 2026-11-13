@@ -84,6 +84,8 @@ export interface HttpDeps {
 
 export interface Http {
   getJson(url: string, options?: HttpOptions): Promise<unknown>;
+  /** Raw bytes (release assets). Same allowlist, timeout, size cap and retries; no JSON parsing. */
+  getBytes(url: string, options?: Omit<HttpOptions, "isEmpty">): Promise<Uint8Array>;
 }
 
 const RETRYABLE: ReadonlySet<IssueKind> = new Set(["network", "timeout", "empty-response"]);
@@ -94,7 +96,7 @@ export function createHttp(deps: HttpDeps = {}): Http {
   const backoffMs = deps.backoffMs ?? 1500;
   const allowed = deps.allowedHosts ?? ALLOWED_HOSTS;
 
-  async function once(url: string, o: Required<Omit<HttpOptions, "isEmpty" | "headers">> & HttpOptions) {
+  async function once(url: string, o: Required<Omit<HttpOptions, "isEmpty" | "headers">> & HttpOptions, binary = false) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), o.timeoutMs);
     try {
@@ -103,17 +105,25 @@ export function createHttp(deps: HttpDeps = {}): Http {
         res = await doFetch(url, {
           signal: controller.signal,
           redirect: "follow",
-          headers: { accept: "application/json", "accept-encoding": "gzip", "user-agent": USER_AGENT, ...o.headers },
+          headers: {
+            accept: binary ? "application/octet-stream" : "application/json",
+            "accept-encoding": "gzip",
+            "user-agent": USER_AGENT,
+            ...o.headers,
+          },
         });
       } catch (err) {
         if (controller.signal.aborted) throw new SourceError("timeout", `No response within ${o.timeoutMs} ms: ${url}`);
         const cause = err instanceof Error && err.cause instanceof Error ? ` (${err.cause.message})` : "";
         throw new SourceError("network", `${err instanceof Error ? err.message : String(err)}${cause}: ${url}`);
       }
-      const text = await readCapped(res, o.maxBytes, url, controller);
+      const bytes = await readCapped(res, o.maxBytes, url, controller);
       if (!res.ok) {
-        throw new SourceError("http-error", `HTTP ${res.status} from ${url}`, { httpStatus: res.status, payload: text });
+        const payload = bytes.toString("utf8", 0, Math.min(bytes.length, 64_000));
+        throw new SourceError("http-error", `HTTP ${res.status} from ${url}`, { httpStatus: res.status, payload });
       }
+      if (binary) return new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const text = bytes.toString("utf8");
       let body: unknown;
       try {
         body = JSON.parse(text);
@@ -129,28 +139,31 @@ export function createHttp(deps: HttpDeps = {}): Http {
     }
   }
 
-  return {
-    async getJson(url, options = {}) {
-      const host = new URL(url).host;
-      if (!allowed.has(host)) throw new SourceError("internal", `Host not on the allowlist: ${host}`);
-      const o = { timeoutMs: 20_000, maxBytes: 5_000_000, attempts: 3, ...options };
-      for (let attempt = 1; ; attempt++) {
-        try {
-          return await once(url, o);
-        } catch (err) {
-          const e = toSourceError(err);
-          const retryable =
-            RETRYABLE.has(e.kind) || (e.kind === "http-error" && (e.httpStatus! >= 500 || e.httpStatus === 429));
-          if (!retryable || attempt >= o.attempts) throw e;
-          await sleep(backoffMs * attempt);
-        }
+  async function withRetries<T>(url: string, options: HttpOptions, run: (o: Required<Omit<HttpOptions, "isEmpty" | "headers">> & HttpOptions) => Promise<T>): Promise<T> {
+    const host = new URL(url).host;
+    if (!allowed.has(host)) throw new SourceError("internal", `Host not on the allowlist: ${host}`);
+    const o = { timeoutMs: 20_000, maxBytes: 5_000_000, attempts: 3, ...options };
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await run(o);
+      } catch (err) {
+        const e = toSourceError(err);
+        const retryable =
+          RETRYABLE.has(e.kind) || (e.kind === "http-error" && (e.httpStatus! >= 500 || e.httpStatus === 429));
+        if (!retryable || attempt >= o.attempts) throw e;
+        await sleep(backoffMs * attempt);
       }
-    },
+    }
+  }
+
+  return {
+    getJson: (url, options = {}) => withRetries(url, options, (o) => once(url, o)),
+    getBytes: (url, options = {}) => withRetries(url, options, (o) => once(url, o, true) as Promise<Uint8Array>),
   };
 }
 
-async function readCapped(res: Response, maxBytes: number, url: string, controller: AbortController): Promise<string> {
-  if (!res.body) return "";
+async function readCapped(res: Response, maxBytes: number, url: string, controller: AbortController): Promise<Buffer> {
+  if (!res.body) return Buffer.alloc(0);
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {
@@ -167,5 +180,5 @@ async function readCapped(res: Response, maxBytes: number, url: string, controll
     if (controller.signal.aborted) throw new SourceError("timeout", `Body not received in time: ${url}`);
     throw new SourceError("network", `Connection lost while reading ${url}`);
   }
-  return Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks);
 }

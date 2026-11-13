@@ -65,4 +65,19 @@ Coverage below was recorded live on 2026-11-13 (season 2026, after week 9), with
 
 ## nflverse
 
-Not a snapshot source: it is downloaded by the `nflverse` stage (`pipeline/nflverse/`). See its section in `docs/RUNBOOK.md` and `pipeline/nflverse/README.md` once M0-8 lands.
+Not a snapshot source: the `nflverse` stage (`pipeline/nflverse/stage.ts`, job `nflverse` in `daily.yml`) downloads release assets of `nflverse/nflverse-data` and checks them. Tier: structural (history, players and the hub model all depend on it); a failure opens a `pipeline-broken` issue.
+
+- **Requests:** `GET https://api.github.com/repos/nflverse/nflverse-data/releases/tags/{tag}` lists a release's assets with `size` and `updated_at` (one request per tag; all assets come back in one response, 554 for `stats_player`). Assets download from `https://github.com/nflverse/nflverse-data/releases/download/{tag}/{file}`, which redirects to `release-assets.githubusercontent.com`. The workflow token is sent to the API when present (60 requests an hour without it).
+- **Files** (`pipeline/nflverse/datasets.ts`):
+
+| Dataset | Tag | File | 2025 rows | Notes |
+|---|---|---|---|---|
+| `pbp` | `pbp` | `play_by_play_{season}.parquet` | 48,771 (372 columns, 20 MB) | `ep`, `epa`, `cpoe`, `air_yards`, `pass_location`, `run_location`, `run_gap` all present |
+| `stats_player` | `stats_player` | `stats_player_week_{season}.parquet` | 19,422 (150 columns) | The old `player_stats` release is dead; `_reg_`, `_post_` and `_regpost_` season totals also exist |
+| `games` | `schedules` | `games.parquet` | 7,548 games since 1999 | Has `spread_line`, moneylines, `espn` game id, `div_game` |
+| `players` | `players` | `players.parquet` | 24,869 | `gsis_id`, `espn_id`, `headshot`, `latest_team` |
+
+- **Format:** parquet read with `hyparquet` (proved 2026-11-13: every file is Snappy-compressed, which hyparquet reads with no extra codec package). Each release also has `.csv.gz`, `.csv` and `.rds` copies; not used. If nflverse ever switches to zstd or another codec, the error will say "unsupported compression"; the fix is adding `hyparquet-compressors`.
+- **Cache:** `cache/nflverse/{tag}/{file}` plus `{file}.json` with the `updated_at` and size it was downloaded at. A file is downloaded again only when either changes. In Actions the folder is kept with `actions/cache`. Cold run about 12 s and 580 MB peak memory; a cached run about 1.3 s.
+- **Healthy:** every requested file present and passing the checks in `docs/DATA-CONTRACT.md` section 5; in season, `play_by_play_{current}.parquet` updated within a day or two (nflverse rebuilds daily in season; on 2026-11-13 it was rebuilt at 17:11 UTC).
+- **Before mid-September** the current season's files may not exist yet; they are listed under `notPublished` in the manifest and do not fail the stage. From September 15 a missing file is a failure.
