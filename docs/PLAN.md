@@ -378,15 +378,17 @@ Each ends with a checkpoint where Dan uses the live site. Do not start a milesto
 
 | # | Task | Who | Done when |
 |---|---|---|---|
-| M0-1 | Repo scaffold: Vite app shell, pipeline folder, shared package, lint, `ci.yml` (typecheck, tests, build) | O | CI green on an empty app deployed to Pages |
-| M0-2 | `shared/` schemas and `docs/DATA-CONTRACT.md`: ids, team table, snapshot, series, status | F | Schemas compile; team table round-trips all 32 teams for every provider naming |
-| M0-3 | Adapter framework: HTTP helper, adapter interface, sanity checks, fixture runner, `capture.ts` with merge-not-overwrite | F | Contract tests pass; a forced failure yields a valid snapshot with an error block |
-| M0-4 | Exemplar adapters: `espn-fpi` and `polymarket`, with fixtures | F | Both produce 32-team coverage live and from fixtures |
-| M0-5 | `health.ts`, `status.json`, issue sync | F | Simulated outage opens an issue; recovery closes it |
-| M0-6 | `daily.yml` with independent jobs, `derived` branch publish, deploy that survives failed stages | F | A run with one job forced to fail still deploys with last good data |
+| M0-1 ✅ | Repo scaffold: Vite app shell, pipeline folder, shared package, lint, `ci.yml` (typecheck, tests, build) | O | CI green on an empty app deployed to Pages |
+| M0-2 ✅ | `shared/` schemas and `docs/DATA-CONTRACT.md`: ids, team table, snapshot, series, status | F | Schemas compile; team table round-trips all 32 teams for every provider naming |
+| M0-3 ✅ | Adapter framework: HTTP helper, adapter interface, sanity checks, fixture runner, `capture.ts` with merge-not-overwrite | F | Contract tests pass; a forced failure yields a valid snapshot with an error block |
+| M0-4 ✅ | Exemplar adapters: `espn-fpi` and `polymarket`, with fixtures | F | Both produce 32-team coverage live and from fixtures |
+| M0-5 ✅ | `health.ts`, `status.json`, issue sync | F | Simulated outage opens an issue; recovery closes it |
+| M0-6 ✅ | `daily.yml` with independent jobs, `derived` branch publish, deploy that survives failed stages | F | A run with one job forced to fail still deploys with last good data |
 | M0-7 | Remaining adapters from the exemplar pattern: `draftkings`, `kalshi`, `bovada` | O | Each has a fixture and contract test and live coverage recorded in `docs/SOURCES.md` |
 | M0-8 | nflverse download module with asset caching; prove `hyparquet` or fall back to csv.gz | O | `pbp`, `stats_player`, `games`, `players` load for 2025 in CI |
 | M0-9 | `docs/SOURCES.md`, `docs/RUNBOOK.md`, `npm run doctor`, `CLAUDE.md` | O | A fresh session can diagnose a broken fixture using only the runbook |
+
+M0-1 to M0-6 were finished on 2026-11-13 (✅). Notes for M0-7 to M0-9 are in `pipeline/README.md`.
 
 Checkpoint: Dan sees a bare status page listing every source green, and three days of unattended captures.
 

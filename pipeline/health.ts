@@ -92,7 +92,8 @@ export function computeStatus(input: StatusInput): Status {
     if (id === "capture") {
       const fresh = latest?.date === today;
       ok &&= fresh;
-      detail = fresh ? `snapshot for ${today} written` : `no snapshot for ${today}; latest is ${latest?.date ?? "none"} (${detail})`;
+      const have = fresh ? `a snapshot for ${today} exists` : `no snapshot for ${today}; latest is ${latest?.date ?? "none"}`;
+      detail = ok ? `snapshot for ${today} written` : `${have} (${detail})`;
     }
     return { id, status: ok ? "ok" : "error", lastOk: ok ? generatedAt : (before?.lastOk ?? null), detail, issue: null };
   });
