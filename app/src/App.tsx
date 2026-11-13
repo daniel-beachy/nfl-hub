@@ -1,21 +1,12 @@
 import { HashRouter, Route, Routes } from "react-router";
-import { SOURCE_IDS } from "../../shared/ids.ts";
+import { StatusPage } from "./features/status/StatusPage.tsx";
 
-function Shell() {
-  return (
-    <main>
-      <h1>NFL Hub</h1>
-      <p>Foundation build. No data yet.</p>
-      <p>Planned sources: {SOURCE_IDS.join(", ")}</p>
-    </main>
-  );
-}
-
+// M0: the only page is the data status. Season, Live and Players arrive in M1 to M3.
 export function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="*" element={<Shell />} />
+        <Route path="*" element={<StatusPage />} />
       </Routes>
     </HashRouter>
   );

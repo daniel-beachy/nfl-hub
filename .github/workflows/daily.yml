@@ -1,0 +1,125 @@
+name: Daily
+
+# The whole pipeline (docs/PLAN.md 5.4). Scheduled runs often start hours late; nothing
+# here depends on the exact time. Every job after capture runs even if an earlier one
+# failed, so the site always deploys with the last good data.
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+    - cron: "0 15 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      fail_job:
+        description: "Testing only: force this job to fail (capture or health)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  issues: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Forced failure (testing)
+        if: inputs.fail_job == 'capture'
+        run: exit 1
+      - run: npm run capture
+      - name: Keep raw responses from failed sources
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: failed-payloads
+          path: tmp/failed-payloads/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Commit the snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/snapshots
+          if git diff --cached --quiet; then
+            echo "No snapshot change."
+            exit 0
+          fi
+          git commit --quiet --message "Snapshot $(date -u +%Y-%m-%d)"
+          for attempt in 1 2 3; do
+            git pull --quiet --rebase origin main && git push --quiet origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1
+
+  # Later stages (nflverse, model, compile) go here, each with `needs` on the one before
+  # and `if: always()`, each fetching and pushing the derived branch around its own files.
+
+  health:
+    needs: [capture]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: scripts/derived.sh fetch derived
+      - name: Forced failure (testing)
+        if: inputs.fail_job == 'health'
+        run: exit 1
+      - run: npm run health
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+      - run: scripts/derived.sh push derived
+
+  deploy:
+    needs: [capture, health]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Check and build (a broken build leaves the current site up)
+        run: npm run check
+      - name: Add the last good derived data
+        run: scripts/derived.sh fetch dist/data
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v5
