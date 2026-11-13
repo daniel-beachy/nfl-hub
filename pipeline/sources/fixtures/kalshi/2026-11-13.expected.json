@@ -1,0 +1,1298 @@
+{
+ "status": "ok",
+ "observedAt": null,
+ "error": null,
+ "issues": [],
+ "teams": {
+  "ARI": {
+   "superBowl": 0.0044,
+   "conference": 0.0049,
+   "division": 0.0051,
+   "playoffs": 0.015,
+   "seed1": 0.005
+  },
+  "ATL": {
+   "superBowl": 0.0044,
+   "conference": 0.0049,
+   "division": 0.1733,
+   "playoffs": 0.175,
+   "seed1": 0.005
+  },
+  "BAL": {
+   "superBowl": 0.0044,
+   "conference": 0.015,
+   "division": 0.025,
+   "playoffs": 0.155,
+   "seed1": 0.0045
+  },
+  "BUF": {
+   "superBowl": 0.1289,
+   "conference": 0.245,
+   "division": 0.885,
+   "playoffs": 0.975,
+   "seed1": 0.3773
+  },
+  "CAR": {
+   "superBowl": 0.0044,
+   "conference": 0.0146,
+   "division": 0.2624,
+   "playoffs": 0.26,
+   "seed1": 0.005
+  },
+  "CHI": {
+   "superBowl": 0.1111,
+   "conference": 0.1854,
+   "division": 0.355,
+   "playoffs": 0.875,
+   "seed1": 0.1692
+  },
+  "CIN": {
+   "superBowl": 0.0578,
+   "conference": 0.125,
+   "division": 0.635,
+   "playoffs": 0.925,
+   "seed1": 0.1136
+  },
+  "CLE": {
+   "superBowl": 0.0044,
+   "conference": 0.005,
+   "division": 0.035,
+   "playoffs": 0.24,
+   "seed1": 0.0045
+  },
+  "DAL": {
+   "superBowl": 0.0133,
+   "conference": 0.0341,
+   "division": 0.3467,
+   "playoffs": 0.355,
+   "seed1": 0.005
+  },
+  "DEN": {
+   "superBowl": 0.0489,
+   "conference": 0.115,
+   "division": 0.555,
+   "playoffs": 0.925,
+   "seed1": 0.1545
+  },
+  "DET": {
+   "superBowl": 0.04,
+   "conference": 0.0927,
+   "division": 0.285,
+   "playoffs": 0.765,
+   "seed1": 0.1244
+  },
+  "GB": {
+   "superBowl": 0.04,
+   "conference": 0.0732,
+   "division": 0.125,
+   "playoffs": 0.645,
+   "seed1": 0.0398
+  },
+  "HOU": {
+   "superBowl": 0.0222,
+   "conference": 0.035,
+   "division": 0.0945,
+   "playoffs": 0.405,
+   "seed1": 0.0045
+  },
+  "IND": {
+   "superBowl": 0.0044,
+   "conference": 0.005,
+   "division": 0.005,
+   "playoffs": 0.015,
+   "seed1": 0.0045
+  },
+  "JAX": {
+   "superBowl": 0.0933,
+   "conference": 0.205,
+   "division": 0.8955,
+   "playoffs": 0.955,
+   "seed1": 0.2136
+  },
+  "KC": {
+   "superBowl": 0.0667,
+   "conference": 0.135,
+   "division": 0.425,
+   "playoffs": 0.915,
+   "seed1": 0.0727
+  },
+  "LA": {
+   "superBowl": 0.04,
+   "conference": 0.0927,
+   "division": 0.0765,
+   "playoffs": 0.445,
+   "seed1": 0.01
+  },
+  "LAC": {
+   "superBowl": 0.0044,
+   "conference": 0.005,
+   "division": 0.005,
+   "playoffs": 0.005,
+   "seed1": 0.0045
+  },
+  "LV": {
+   "superBowl": 0.0044,
+   "conference": 0.005,
+   "division": 0.015,
+   "playoffs": 0.115,
+   "seed1": 0.0045
+  },
+  "MIA": {
+   "superBowl": 0.0044,
+   "conference": 0.005,
+   "division": 0.005,
+   "playoffs": 0.005,
+   "seed1": 0.0045
+  },
+  "MIN": {
+   "superBowl": 0.04,
+   "conference": 0.0829,
+   "division": 0.235,
+   "playoffs": 0.705,
+   "seed1": 0.0846
+  },
+  "NE": {
+   "superBowl": 0.0222,
+   "conference": 0.045,
+   "division": 0.105,
+   "playoffs": 0.625,
+   "seed1": 0.0045
+  },
+  "NO": {
+   "superBowl": 0.0044,
+   "conference": 0.0049,
+   "division": 0.1832,
+   "playoffs": 0.215,
+   "seed1": 0.005
+  },
+  "NYG": {
+   "superBowl": 0.0133,
+   "conference": 0.0244,
+   "division": 0.4824,
+   "playoffs": 0.5,
+   "seed1": 0.005
+  },
+  "NYJ": {
+   "superBowl": 0.0044,
+   "conference": 0.005,
+   "division": 0.005,
+   "playoffs": 0.015,
+   "seed1": 0.0045
+  },
+  "PHI": {
+   "superBowl": 0.0044,
+   "conference": 0.0049,
+   "division": 0.0151,
+   "playoffs": 0.015,
+   "seed1": 0.005
+  },
+  "PIT": {
+   "superBowl": 0.0222,
+   "conference": 0.045,
+   "division": 0.305,
+   "playoffs": 0.735,
+   "seed1": 0.0227
+  },
+  "SEA": {
+   "superBowl": 0.04,
+   "conference": 0.0829,
+   "division": 0.0969,
+   "playoffs": 0.525,
+   "seed1": 0.0149
+  },
+  "SF": {
+   "superBowl": 0.1333,
+   "conference": 0.2683,
+   "division": 0.8214,
+   "playoffs": 0.97,
+   "seed1": 0.5124
+  },
+  "TB": {
+   "superBowl": 0.0044,
+   "conference": 0.0244,
+   "division": 0.3812,
+   "playoffs": 0.375,
+   "seed1": 0.005
+  },
+  "TEN": {
+   "superBowl": 0.0044,
+   "conference": 0.005,
+   "division": 0.005,
+   "playoffs": 0.005,
+   "seed1": 0.0045
+  },
+  "WAS": {
+   "superBowl": 0.0044,
+   "conference": 0.0049,
+   "division": 0.1558,
+   "playoffs": 0.2,
+   "seed1": 0.005
+  }
+ },
+ "awards": {
+  "mvp": [
+   {
+    "playerId": null,
+    "name": "Joe Burrow",
+    "team": null,
+    "prob": 0.325
+   },
+   {
+    "playerId": null,
+    "name": "Josh Allen",
+    "team": null,
+    "prob": 0.215
+   },
+   {
+    "playerId": null,
+    "name": "Brock Purdy",
+    "team": null,
+    "prob": 0.155
+   },
+   {
+    "playerId": null,
+    "name": "Jordan Love",
+    "team": null,
+    "prob": 0.145
+   },
+   {
+    "playerId": null,
+    "name": "Trevor Lawrence",
+    "team": null,
+    "prob": 0.085
+   },
+   {
+    "playerId": null,
+    "name": "Caleb Williams",
+    "team": null,
+    "prob": 0.035
+   },
+   {
+    "playerId": null,
+    "name": "CJ Stroud",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Jared Goff",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Kirk Cousins",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Patrick Mahomes",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "A.J. Brown",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Aaron Rodgers",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Ashton Jeanty",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Baker Mayfield",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Bijan Robinson",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Bo Nix",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Bryce Young",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Cam Ward",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "CeeDee Lamb",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Christian McCaffrey",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Dak Prescott",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Daniel Jones",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Derrick Henry",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Deshaun Watson",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Drake Maye",
+    "team": null,
+    "prob": 0.005
+   }
+  ],
+  "opoy": [
+   {
+    "playerId": null,
+    "name": "Jahmyr Gibbs",
+    "team": null,
+    "prob": 0.335
+   },
+   {
+    "playerId": null,
+    "name": "Jaxon Smith-Njigba",
+    "team": null,
+    "prob": 0.255
+   },
+   {
+    "playerId": null,
+    "name": "Kenneth Walker",
+    "team": null,
+    "prob": 0.185
+   },
+   {
+    "playerId": null,
+    "name": "Bijan Robinson",
+    "team": null,
+    "prob": 0.035
+   },
+   {
+    "playerId": null,
+    "name": "CeeDee Lamb",
+    "team": null,
+    "prob": 0.035
+   },
+   {
+    "playerId": null,
+    "name": "Ja'Marr Chase",
+    "team": null,
+    "prob": 0.035
+   },
+   {
+    "playerId": null,
+    "name": "Josh Allen",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Brock Bowers",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Christian Watson",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Tee Higgins",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "A.J. Brown",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Amon-Ra St. Brown",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Ashton Jeanty",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Baker Mayfield",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Breece Hall",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Brian Thomas Jr.",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Bucky Irving",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "C.J. Stroud",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Caleb Williams",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Chase Brown",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Chris Olave",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Christian McCaffrey",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "D'Andre Swift",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Davante Adams",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "De'Von Achane",
+    "team": null,
+    "prob": 0.005
+   }
+  ],
+  "dpoy": [
+   {
+    "playerId": null,
+    "name": "Will Anderson Jr.",
+    "team": null,
+    "prob": 0.395
+   },
+   {
+    "playerId": null,
+    "name": "Fred Warner",
+    "team": null,
+    "prob": 0.155
+   },
+   {
+    "playerId": null,
+    "name": "Jeffery Simmons",
+    "team": null,
+    "prob": 0.08
+   },
+   {
+    "playerId": null,
+    "name": "T.J. Watt",
+    "team": null,
+    "prob": 0.075
+   },
+   {
+    "playerId": null,
+    "name": "Aidan Hutchinson",
+    "team": null,
+    "prob": 0.065
+   },
+   {
+    "playerId": null,
+    "name": "Greg Rousseau",
+    "team": null,
+    "prob": 0.055
+   },
+   {
+    "playerId": null,
+    "name": "Dallas Turner",
+    "team": null,
+    "prob": 0.045
+   },
+   {
+    "playerId": null,
+    "name": "Myles Garrett",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Andrew Van Ginkel",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Chase Young",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Dexter Lawrence II",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Nik Bonitto",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Aaron Donald",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Abdul Carter",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Alex Highsmith",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Arvell Reese",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Brian Branch",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Brian Burns",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Budda Baker",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Byron Murphy II",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Byron Young",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Carson Schwesinger",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Chop Robinson",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Chris Jones",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Christian Gonzalez",
+    "team": null,
+    "prob": 0.005
+   }
+  ],
+  "oroy": [
+   {
+    "playerId": null,
+    "name": "Fernando Mendoza",
+    "team": null,
+    "prob": 0.205
+   },
+   {
+    "playerId": null,
+    "name": "Jonah Coleman",
+    "team": null,
+    "prob": 0.155
+   },
+   {
+    "playerId": null,
+    "name": "Denzel Boston",
+    "team": null,
+    "prob": 0.145
+   },
+   {
+    "playerId": null,
+    "name": "Carnell Tate",
+    "team": null,
+    "prob": 0.105
+   },
+   {
+    "playerId": null,
+    "name": "KC Concepcion",
+    "team": null,
+    "prob": 0.095
+   },
+   {
+    "playerId": null,
+    "name": "Carson Beck",
+    "team": null,
+    "prob": 0.045
+   },
+   {
+    "playerId": null,
+    "name": "Omar Cooper Jr.",
+    "team": null,
+    "prob": 0.045
+   },
+   {
+    "playerId": null,
+    "name": "Jordyn Tyson",
+    "team": null,
+    "prob": 0.035
+   },
+   {
+    "playerId": null,
+    "name": "Antonio Williams",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Caleb Douglas",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Makai Lemon",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Emmett Johnson",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Germie Bernard",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Jadarian Price",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Mike Washington Jr.",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Bryce Lance",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Cade Klubnik",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Chris Bell",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Chris Brazzell II",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Cole Payton",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Cyrus Allen",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "De'Zhaun Stribling",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Drew Allar",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Eli Raridon",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Eli Stowers",
+    "team": null,
+    "prob": 0.005
+   }
+  ],
+  "droy": [
+   {
+    "playerId": null,
+    "name": "Arvell Reese",
+    "team": null,
+    "prob": 0.55
+   },
+   {
+    "playerId": null,
+    "name": "David Bailey",
+    "team": null,
+    "prob": 0.265
+   },
+   {
+    "playerId": null,
+    "name": "Sonny Styles",
+    "team": null,
+    "prob": 0.085
+   },
+   {
+    "playerId": null,
+    "name": "Jacob Rodriguez",
+    "team": null,
+    "prob": 0.065
+   },
+   {
+    "playerId": null,
+    "name": "Caleb Downs",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Brandon Cisse",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Akheem Mesidor",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Anthony Hill Jr.",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Avieon Terrell",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Caleb Banks",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Cashius Howell",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Chris Johnson",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "CJ Allen",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Colton Hood",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "D'Angelo Ponds",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Dani Dennis-Sutton",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Derrick Moore",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Dillon Thieneman",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Emmanuel McNeil-Warren",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Gabe Jacas",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Gracen Halton",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Harold Perkins Jr.",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Hezekiah Masses",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Jaishawn Barham",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Jake Golday",
+    "team": null,
+    "prob": 0.005
+   }
+  ],
+  "coy": [
+   {
+    "playerId": null,
+    "name": "John Harbaugh",
+    "team": null,
+    "prob": 0.235
+   },
+   {
+    "playerId": null,
+    "name": "Kyle Shanahan",
+    "team": null,
+    "prob": 0.235
+   },
+   {
+    "playerId": null,
+    "name": "Ben Johnson",
+    "team": null,
+    "prob": 0.175
+   },
+   {
+    "playerId": null,
+    "name": "Liam Coen",
+    "team": null,
+    "prob": 0.085
+   },
+   {
+    "playerId": null,
+    "name": "Todd Monken",
+    "team": null,
+    "prob": 0.075
+   },
+   {
+    "playerId": null,
+    "name": "Dan Campbell",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Mike McCarthy",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Jesse Minter",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Joe Brady",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Kevin O'Connell",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Klint Kubiak",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Sean Payton",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Zac Taylor",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Aaron Glenn",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Andy Reid",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Brian Schottenheimer",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Dan Quinn",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Dave Canales",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "DeMeco Ryans",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Jeff Hafley",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Jim Harbaugh",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Kellen Moore",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Kevin Stefanski",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Matt LaFleur",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Mike LaFleur",
+    "team": null,
+    "prob": 0.005
+   }
+  ],
+  "cpoy": [
+   {
+    "playerId": null,
+    "name": "Patrick Mahomes",
+    "team": null,
+    "prob": 0.515
+   },
+   {
+    "playerId": null,
+    "name": "Tank Dell",
+    "team": null,
+    "prob": 0.235
+   },
+   {
+    "playerId": null,
+    "name": "Fred Warner",
+    "team": null,
+    "prob": 0.075
+   },
+   {
+    "playerId": null,
+    "name": "Kirk Cousins",
+    "team": null,
+    "prob": 0.055
+   },
+   {
+    "playerId": null,
+    "name": "Malik Nabers",
+    "team": null,
+    "prob": 0.045
+   },
+   {
+    "playerId": null,
+    "name": "Deshaun Watson",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "George Kittle",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Travis Hunter",
+    "team": null,
+    "prob": 0.025
+   },
+   {
+    "playerId": null,
+    "name": "Joe Burrow",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Micah Parsons",
+    "team": null,
+    "prob": 0.015
+   },
+   {
+    "playerId": null,
+    "name": "Aaron Donald",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Brock Bowers",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Cam Skattebo",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Daniel Jones",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Geno Smith",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Jonathon Brooks",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Kyler Murray",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Michael Penix Jr.",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Nick Bosa",
+    "team": null,
+    "prob": 0.005
+   },
+   {
+    "playerId": null,
+    "name": "Tucker Kraft",
+    "team": null,
+    "prob": 0.005
+   }
+  ]
+ },
+ "coverage": {
+  "superBowl": 32,
+  "conference": 32,
+  "division": 32,
+  "playoffs": 32,
+  "seed1": 32,
+  "mvp": 25,
+  "opoy": 25,
+  "dpoy": 25,
+  "oroy": 25,
+  "droy": 25,
+  "coy": 25,
+  "cpoy": 20
+ },
+ "raw": {
+  "superBowlSum": 1.125,
+  "conferenceSum.AFC": 1,
+  "conferenceSum.NFC": 1.025,
+  "seed1Sum.AFC": 1.1,
+  "seed1Sum.NFC": 1.005,
+  "divisionSum.AFC East": 1,
+  "divisionSum.AFC North": 1,
+  "divisionSum.AFC South": 1.005,
+  "divisionSum.AFC West": 1,
+  "divisionSum.NFC East": 0.995,
+  "divisionSum.NFC North": 1,
+  "divisionSum.NFC South": 1.01,
+  "divisionSum.NFC West": 0.98,
+  "playoffsSum": 14.055
+ }
+}

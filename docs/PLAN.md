@@ -61,9 +61,9 @@ Nothing is reused from the old repos except the real 2026 snapshot data in `nfl-
 | **nflverse-data releases** | Play-by-play with EPA/CPOE, weekly player stats, schedules and results, Next Gen Stats, FTN charting, PFR advanced, snap counts, rosters, players | GitHub release assets, keyless | Updated daily in season. Post-game only. The old `player_stats` release is dead (last update 2025-05); use `stats_player`. |
 | **Hub model** | Team forecasts for every metric, every week since 2020 | Computed in our pipeline from nflverse `games` | Cannot go offline. |
 | **Polymarket Gamma** | Super Bowl, conference, division, make-playoffs, awards | Keyless. **Must send `Accept-Encoding: gzip`**; requests with `limit` above 50 are rejected otherwise. | Worked every week. Event slugs change yearly, so discover by tag and title pattern, never by hard-coded slug. |
-| **Kalshi** | Super Bowl (`KXSB`), conference (`KXNFLAFCCHAMP`, `KXNFLNFCCHAMP`), divisions (`KXNFLAFCNORTH` etc.), playoffs (`KXNFLPLAYOFF`), win totals (`KXNFLWINS-<TEAM>`), awards (`KXNFLMVP` etc.) | `https://api.elections.kalshi.com/trade-api/v2`, keyless for market data, no CORS header (fine: pipeline only) | New to us. Prices are strings in `yes_bid_dollars`, `yes_ask_dollars`, `last_price_dollars`. Use bid/ask midpoint, falling back to last price. |
+| **Kalshi** | Super Bowl (`KXSB`), conference (`KXNFLAFCCHAMP`, `KXNFLNFCCHAMP`), divisions (`KXNFLAFCNORTH` etc.), playoffs (`KXNFLPLAYOFF`), 1 seed (`KXNFL1SEED`), awards (`KXNFLMVP`, `KXNFLOPOTY` etc.; see `docs/SOURCES.md`). No 2026 win totals. | `https://api.elections.kalshi.com/trade-api/v2`, keyless for market data, no CORS header (fine: pipeline only) | New to us. Prices are strings in `yes_bid_dollars`, `yes_ask_dollars`, `last_price_dollars`. Use bid/ask midpoint, falling back to last price when the spread is over 10 cents. |
 | **DraftKings via ESPN futures** | Super Bowl, conference, division, make-playoffs, awards | `sports.core.api.espn.com/v2/.../seasons/{y}/futures` | Worked every week. No odds timestamp. |
-| **Bovada** | Super Bowl, conference, division, playoffs, win totals, awards | Keyless JSON | **Flaky.** Missing entirely in 2 of 10 weeks and partial in most. The bare URL returns `{}`; `?lang=en` returned full data on the day tested. Retry with backoff; treat as a bonus source. |
+| **Bovada** | Super Bowl, conference, division, 1 seed, playoffs, win totals, awards (four coupon paths) | Keyless JSON | **Flaky.** Missing entirely in 2 of 10 weeks and partial in most. The bare URL returns `{}`; `?lang=en` returned full data on the day tested. Retry with backoff; treat as a bonus source. |
 
 Not included: **Novig** (only an undocumented GraphQL endpoint that rejected plain requests; revisit if they publish an API). Anything that needs a key or an account.
 
@@ -384,11 +384,11 @@ Each ends with a checkpoint where Dan uses the live site. Do not start a milesto
 | M0-4 ✅ | Exemplar adapters: `espn-fpi` and `polymarket`, with fixtures | F | Both produce 32-team coverage live and from fixtures |
 | M0-5 ✅ | `health.ts`, `status.json`, issue sync | F | Simulated outage opens an issue; recovery closes it |
 | M0-6 ✅ | `daily.yml` with independent jobs, `derived` branch publish, deploy that survives failed stages | F | A run with one job forced to fail still deploys with last good data |
-| M0-7 | Remaining adapters from the exemplar pattern: `draftkings`, `kalshi`, `bovada` | O | Each has a fixture and contract test and live coverage recorded in `docs/SOURCES.md` |
+| M0-7 ✅ | Remaining adapters from the exemplar pattern: `draftkings`, `kalshi`, `bovada` | O | Each has a fixture and contract test and live coverage recorded in `docs/SOURCES.md` |
 | M0-8 | nflverse download module with asset caching; prove `hyparquet` or fall back to csv.gz | O | `pbp`, `stats_player`, `games`, `players` load for 2025 in CI |
 | M0-9 | `docs/SOURCES.md`, `docs/RUNBOOK.md`, `npm run doctor`, `CLAUDE.md` | O | A fresh session can diagnose a broken fixture using only the runbook |
 
-M0-1 to M0-6 were finished on 2026-11-13 (✅). Notes for M0-7 to M0-9 are in `pipeline/README.md`.
+M0-1 to M0-6 were finished on 2026-11-13 (✅), M0-7 the same day. Notes for M0-8 and M0-9 are in `pipeline/README.md`.
 
 Checkpoint: Dan sees a bare status page listing every source green, and three days of unattended captures.
 
@@ -451,5 +451,5 @@ Checkpoint: Dan browses players.
 - **Repo growth from daily snapshots.** Estimated under 40 MB per year. Revisit yearly; old seasons can move to a release asset.
 - **Hub model quality.** It is a simple results-only model and will lag markets on injuries. It is labeled as a model and is one tab among several.
 - **Live EPA accuracy.** Unknown until M2-3 measures it; the plan states the fallback.
-- **Kalshi coverage** for win totals and awards has not been checked market by market; M0-7 records what is really there.
+- **Kalshi coverage** was checked in M0-7 (2026-11-13): every team metric, 1 seed and all seven awards, but no 2026 win totals. `docs/SOURCES.md` has the series list.
 - **Things not verified in planning:** `hyparquet` against nflverse files; whether ESPN `wallclock` is close enough to broadcast time for calibration to feel right; Sunday HQ's logged-in flow (out of scope).

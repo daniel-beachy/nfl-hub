@@ -20,7 +20,7 @@ adapter.fetch ──► adapter.payload (zod) ──► adapter.parse ──► 
 
 `sources/run.ts` wraps this so that nothing an adapter does can throw past it: every failure becomes an `error` block with a `kind`. `capture.ts` merges blocks into today's file and never replaces better data with worse.
 
-## Adding a source (M0-7)
+## Adding a source
 
 Copy `sources/polymarket.ts` (a market found by searching) or `sources/espn-fpi.ts` (one request, named stats). Then:
 
@@ -34,14 +34,9 @@ Copy `sources/polymarket.ts` (a market found by searching) or `sources/espn-fpi.
 
 American odds to implied probability: `+500` is `100 / (500 + 100)`, `-150` is `150 / (150 + 100)`.
 
-## What the providers looked like on 2026-11-13
+## What the providers look like
 
-Seen in live responses while building M0-2 to M0-4. Verify before relying on any of it.
-
-- **Kalshi** `GET https://api.elections.kalshi.com/trade-api/v2/markets?series_ticker=KXSB&status=open&limit=100` returned 32 markets and an empty `cursor`. Team: ticker suffix (`KXSB-27-JAC`, `-LAR`) via `teamFromKalshiCode`, or `yes_sub_title` (`Los Angeles R`, `New York G`) via `teamFromName`. Prices are strings: `yes_bid_dollars`, `yes_ask_dollars`, `last_price_dollars`. The event ticker carries the Super Bowl year (`KXSB-27` for the 2026 season). Other series in the plan (section 4) were not checked.
-- **DraftKings via ESPN** `GET https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/futures?limit=100` returned 23 markets in one page. Each item has `name` and `futures[0].books[]` with `value` (American odds, a string like `+170`) and a `team.$ref` or `athlete.$ref` URL ending in the ESPN id. Names seen: `NFL - Super Bowl Winner`, `Pro Football (A) Conference Winner`, `Pro Football (N) Conference - Winner`, `Pro Football (A) South Division - Winner`, `Pro Football (N) West Division` (no "Winner"), `NFL - To Make the Playoffs`, `Regular Season MVP`, `Offensive Player of the Year`, and the other five awards. Whether "To Make the Playoffs" quotes both sides was not checked. Athlete names need a second request per `$ref`, or the nflverse `players` file (M0-8) by `espn_id`.
-- **Bovada** `GET https://www.bovada.lv/services/sports/event/coupon/events/A/description/football/nfl-futures?lang=en` returned an array of groups, each with `events[]`, each with `displayGroups[].markets[].outcomes[]` (`description` is the full team name, `price.american`). Events seen: `Super Bowl LXI 2027` (32), ` AFC Championship 2026-27` (16, note the leading space), `#1 Seed in the AFC Playoffs 2026-27` (11 of 16 teams), the eight divisions (4 each). No make-playoffs, win totals or awards at that URL that day.
-- **Polymarket win totals** exist as one event per team (`Pro Football: Bills 2026 Win Total`) under tag `nfl`, not under `nfl-team-futures`. Not captured yet; it would need about four more pages of a large response.
+`docs/SOURCES.md` has every source's requests, the fields read, its coverage on the day it was built and what has gone wrong before. Shared helpers for sportsbooks and exchanges (American odds, team codes, settlement season, fetching several parts where one failure only makes the block `partial`) are in `sources/odds.ts`.
 
 ## Derived data and later stages
 
