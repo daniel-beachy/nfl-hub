@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "capture": "tsx pipeline/capture.ts",
+    "fixture": "tsx pipeline/fixture.ts"
   },
   "dependencies": {
     "d3-scale": "^4.0.3",

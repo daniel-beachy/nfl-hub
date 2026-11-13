@@ -1,0 +1,255 @@
+{
+ "status": "ok",
+ "observedAt": "2026-11-13T07:00:00.000Z",
+ "error": null,
+ "issues": [],
+ "teams": {
+  "ARI": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0,
+   "playoffs": 0.001,
+   "wins": 6
+  },
+  "ATL": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0.042,
+   "playoffs": 0.042,
+   "wins": 5.72
+  },
+  "BAL": {
+   "superBowl": 0,
+   "conference": 0.001,
+   "division": 0.001,
+   "playoffs": 0.037,
+   "wins": 6.81
+  },
+  "BUF": {
+   "superBowl": 0.162,
+   "conference": 0.297,
+   "division": 0.969,
+   "playoffs": 0.999,
+   "wins": 13.5
+  },
+  "CAR": {
+   "superBowl": 0.002,
+   "conference": 0.007,
+   "division": 0.196,
+   "playoffs": 0.201,
+   "wins": 7.02
+  },
+  "CHI": {
+   "superBowl": 0.068,
+   "conference": 0.144,
+   "division": 0.34,
+   "playoffs": 0.887,
+   "wins": 11.76
+  },
+  "CIN": {
+   "superBowl": 0.085,
+   "conference": 0.169,
+   "division": 0.793,
+   "playoffs": 0.987,
+   "wins": 12.63
+  },
+  "CLE": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0.008,
+   "playoffs": 0.116,
+   "wins": 7.9
+  },
+  "DAL": {
+   "superBowl": 0.016,
+   "conference": 0.042,
+   "division": 0.512,
+   "playoffs": 0.52,
+   "wins": 8.47
+  },
+  "DEN": {
+   "superBowl": 0.041,
+   "conference": 0.096,
+   "division": 0.616,
+   "playoffs": 0.981,
+   "wins": 12.44
+  },
+  "DET": {
+   "superBowl": 0.023,
+   "conference": 0.064,
+   "division": 0.243,
+   "playoffs": 0.758,
+   "wins": 10.96
+  },
+  "GB": {
+   "superBowl": 0.025,
+   "conference": 0.058,
+   "division": 0.112,
+   "playoffs": 0.617,
+   "wins": 10.45
+  },
+  "HOU": {
+   "superBowl": 0.015,
+   "conference": 0.033,
+   "division": 0.069,
+   "playoffs": 0.461,
+   "wins": 9.06
+  },
+  "IND": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0.001,
+   "playoffs": 0.007,
+   "wins": 5.96
+  },
+  "JAX": {
+   "superBowl": 0.122,
+   "conference": 0.223,
+   "division": 0.93,
+   "playoffs": 0.988,
+   "wins": 12.45
+  },
+  "KC": {
+   "superBowl": 0.066,
+   "conference": 0.131,
+   "division": 0.384,
+   "playoffs": 0.966,
+   "wins": 11.65
+  },
+  "LA": {
+   "superBowl": 0.024,
+   "conference": 0.049,
+   "division": 0.022,
+   "playoffs": 0.401,
+   "wins": 9.55
+  },
+  "LAC": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0,
+   "playoffs": 0,
+   "wins": 3.76
+  },
+  "LV": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0,
+   "playoffs": 0.014,
+   "wins": 6.42
+  },
+  "MIA": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0,
+   "playoffs": 0,
+   "wins": 2.54
+  },
+  "MIN": {
+   "superBowl": 0.051,
+   "conference": 0.115,
+   "division": 0.306,
+   "playoffs": 0.84,
+   "wins": 11.33
+  },
+  "NE": {
+   "superBowl": 0.01,
+   "conference": 0.023,
+   "division": 0.031,
+   "playoffs": 0.625,
+   "wins": 9.31
+  },
+  "NO": {
+   "superBowl": 0.001,
+   "conference": 0.003,
+   "division": 0.107,
+   "playoffs": 0.109,
+   "wins": 6.37
+  },
+  "NYG": {
+   "superBowl": 0.002,
+   "conference": 0.007,
+   "division": 0.396,
+   "playoffs": 0.404,
+   "wins": 7.83
+  },
+  "NYJ": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0,
+   "playoffs": 0.001,
+   "wins": 4.65
+  },
+  "PHI": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0.001,
+   "playoffs": 0.001,
+   "wins": 4.2
+  },
+  "PIT": {
+   "superBowl": 0.009,
+   "conference": 0.028,
+   "division": 0.198,
+   "playoffs": 0.818,
+   "wins": 10.71
+  },
+  "SEA": {
+   "superBowl": 0.028,
+   "conference": 0.057,
+   "division": 0.041,
+   "playoffs": 0.48,
+   "wins": 9.98
+  },
+  "SF": {
+   "superBowl": 0.224,
+   "conference": 0.391,
+   "division": 0.937,
+   "playoffs": 0.991,
+   "wins": 13.37
+  },
+  "TB": {
+   "superBowl": 0.026,
+   "conference": 0.063,
+   "division": 0.655,
+   "playoffs": 0.658,
+   "wins": 8.19
+  },
+  "TEN": {
+   "superBowl": 0,
+   "conference": 0,
+   "division": 0,
+   "playoffs": 0,
+   "wins": 3.52
+  },
+  "WAS": {
+   "superBowl": 0.001,
+   "conference": 0.002,
+   "division": 0.091,
+   "playoffs": 0.092,
+   "wins": 6.14
+  }
+ },
+ "awards": {},
+ "coverage": {
+  "superBowl": 32,
+  "conference": 32,
+  "division": 32,
+  "playoffs": 32,
+  "wins": 32
+ },
+ "raw": {
+  "superBowlSum": 1.001,
+  "conferenceSum.AFC": 1.001,
+  "conferenceSum.NFC": 1.002,
+  "divisionSum.AFC East": 1,
+  "divisionSum.AFC North": 1,
+  "divisionSum.AFC South": 1,
+  "divisionSum.AFC West": 1,
+  "divisionSum.NFC East": 1,
+  "divisionSum.NFC North": 1.001,
+  "divisionSum.NFC South": 1,
+  "divisionSum.NFC West": 1,
+  "playoffsSum": 14.002,
+  "winsSum": 270.614
+ }
+}

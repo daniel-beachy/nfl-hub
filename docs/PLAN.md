@@ -1,7 +1,7 @@
 # NFL Hub: build plan
 
 Written 2026-11-12 by Claude Fable 5.2 with Dan, for later build sessions (mostly Opus).
-Status: **plan approved by Dan on 2026-11-12. No code exists yet. Building starts when Dan says go.**
+Status: **plan approved by Dan on 2026-11-12. Building started 2026-11-13; `CLAUDE.md` says what is done.**
 
 Read this whole file before building anything. Tasks are tagged:
 
@@ -203,19 +203,23 @@ Rules:
 ### 7.1 Adapter contract [F]
 
 ```ts
-interface SourceAdapter {
+interface SourceAdapter<P> {
   id: SourceId; name: string; kind: 'model' | 'forecast' | 'market';
   tier: 'core' | 'standard' | 'bonus';
-  fetch(ctx: FetchCtx): Promise<RawPayload>;        // network only, no parsing
-  parse(raw: RawPayload, ctx: ParseCtx): SourceResult; // pure, no network
+  expects: { teams: TeamMetric[]; awards: AwardMarket[] }; // what it normally offers
+  payload: z.ZodType<P>;                              // the provider shape we rely on
+  fetch(ctx: FetchCtx): Promise<unknown>;             // network only, no parsing
+  parse(payload: P, ctx: AdapterCtx): ParsedSource;   // pure, no network
 }
 ```
 
-- `fetch` goes through one shared HTTP helper: host allowlist, 20 s timeout, size cap, explicit `Accept-Encoding: gzip` and a browser-like `User-Agent`, three attempts with backoff on network errors, 5xx, and responses a source declares empty (Bovada's `{}`).
-- `parse` validates the provider shape with zod first, then maps. A shape failure is `error.kind: "schema-drift"` and includes the zod path, which tells Claude exactly what changed.
-- Sanity checks after parsing: season matches, team count expected, probabilities in range, complete groups sum close to 1 before normalization (0.95 to 1.6), not all zero. Violations downgrade to `partial` or `error` with a specific `kind`.
-- Each adapter has `fixtures/<source>/<date>.json` (a real recorded payload) and a contract test that parses it to an expected result. `npm run fixture -- <source>` records a fresh one.
-- On failure, the raw response is uploaded as a workflow artifact (`failed-payloads`), and its first 2 KB goes into the snapshot's error block.
+Built in M0-3 (`pipeline/sources/types.ts`); the checks are specified in `docs/DATA-CONTRACT.md` section 2.2.
+
+- `fetch` goes through one shared HTTP helper (`pipeline/lib/http.ts`): host allowlist, 20 s timeout, size cap, explicit `Accept-Encoding: gzip` and a browser-like `User-Agent`, three attempts with backoff on network errors, 5xx, 429, and responses a source declares empty (Bovada's `{}`).
+- The framework validates the raw response against `payload` before `parse` sees it. A shape failure is `error.kind: "schema-drift"` and includes the zod path, which tells Claude exactly what changed.
+- `parse` only maps provider values to our ids. Sanity checks and de-vigging then run in one shared place (`finalize.ts`), the same for every source: season matches, team count expected, probabilities in range, complete groups sum close to 1 before normalization (0.95 to 1.6), not all zero. Violations downgrade to `partial` or `error` with a specific `kind`.
+- Each adapter has `fixtures/<source>/<date>.json`, a real recorded payload trimmed to the fields `payload` reads (Polymarket's raw responses are megabytes), and `<date>.expected.json`, the result it must parse to. One contract test (`contract.test.ts`) runs every adapter against its fixtures. `npm run fixture -- <source>` records a fresh pair.
+- On failure, the raw response is written to `tmp/failed-payloads/` and uploaded as a workflow artifact (`failed-payloads`), and its first 2 KB goes into the snapshot's error block.
 
 ### 7.2 Health and issues [F]
 
