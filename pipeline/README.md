@@ -1,11 +1,12 @@
 # Pipeline
 
-TypeScript run with `tsx`. The design is in `docs/PLAN.md` sections 5 to 7; the file shapes are in `docs/DATA-CONTRACT.md`.
+TypeScript run with `tsx`. The design is in `docs/PLAN.md` sections 5 to 7; the file shapes are in `docs/DATA-CONTRACT.md`; providers in `docs/SOURCES.md`. When something breaks, start with `docs/RUNBOOK.md`.
 
 | Command | What it does |
 |---|---|
 | `npm run capture` | Run every source that is not ok yet today and write `data/snapshots/{season}/{date}.json` |
 | `npm run capture -- --source kalshi --dry-run` | Run one source and print its block; writes nothing |
+| `npm run doctor` | Probe every source and the nflverse releases live and print a table. Read-only; exits 1 if anything is not ok |
 | `npm run fixture -- kalshi` | Record today's real payload and expected result as a test fixture |
 | `npm run nflverse` | Download changed nflverse files into `cache/nflverse/`, check them, write `derived/nflverse/manifest.json` |
 | `npm run nflverse -- --seasons 2020-2026 --datasets pbp --dry-run` | Same for some seasons or datasets; `--dry-run` writes no manifest |

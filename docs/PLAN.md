@@ -386,9 +386,9 @@ Each ends with a checkpoint where Dan uses the live site. Do not start a milesto
 | M0-6 ✅ | `daily.yml` with independent jobs, `derived` branch publish, deploy that survives failed stages | F | A run with one job forced to fail still deploys with last good data |
 | M0-7 ✅ | Remaining adapters from the exemplar pattern: `draftkings`, `kalshi`, `bovada` | O | Each has a fixture and contract test and live coverage recorded in `docs/SOURCES.md` |
 | M0-8 ✅ | nflverse download module with asset caching; prove `hyparquet` or fall back to csv.gz | O | `pbp`, `stats_player`, `games`, `players` load for 2025 in CI |
-| M0-9 | `docs/SOURCES.md`, `docs/RUNBOOK.md`, `npm run doctor`, `CLAUDE.md` | O | A fresh session can diagnose a broken fixture using only the runbook |
+| M0-9 ✅ | `docs/SOURCES.md`, `docs/RUNBOOK.md`, `npm run doctor`, `CLAUDE.md` | O | A fresh session can diagnose a broken fixture using only the runbook |
 
-M0-1 to M0-6 were finished on 2026-11-13 (✅), M0-7 and M0-8 the same day. Notes for M0-9 are in `pipeline/README.md`.
+M0-1 to M0-6 were finished on 2026-11-13 (✅), M0-7 to M0-9 the same day. M0 is waiting for its QA pass and checkpoint.
 
 Checkpoint: Dan sees a bare status page listing every source green, and three days of unattended captures.
 

@@ -16,6 +16,7 @@
     "capture": "tsx pipeline/capture.ts",
     "fixture": "tsx pipeline/fixture.ts",
     "health": "tsx pipeline/health.ts",
+    "doctor": "tsx pipeline/doctor.ts",
     "nflverse": "tsx pipeline/nflverse/stage.ts"
   },
   "dependencies": {
