@@ -8,7 +8,7 @@ The hub's own source (`hub`): team ratings from game results, a simulated rest o
 |---|---|
 | Ratings (`elo.ts`, `games.ts`) | Done, tuned, tested |
 | Evaluation (`evaluate.ts`, `cli.ts`) | Done; numbers below |
-| Tiebreakers and seeding | Not started |
+| Tiebreakers and seeding (`standings.ts`) | Done; 2020 to 2025 real seeds all reproduce, with no coin flips needed |
 | Season and playoff simulation | Not started |
 | Forecast output for M1-2 | Not started |
 
