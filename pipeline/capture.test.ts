@@ -108,6 +108,15 @@ describe("capture", () => {
     expect(onDisk().context!.gamesInProgress).toBe(true);
   });
 
+  test("temp files left by a killed write are removed at the start (QA-M0-15)", async () => {
+    const { root, run } = setup();
+    const dir = join(root, "data/snapshots/2026");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, `${date}.json.tmp-4242`), "{half");
+    await run([good]);
+    expect(readdirSync(dir)).toEqual([`${date}.json`]);
+  });
+
   test("dry run writes nothing", async () => {
     const { root, run } = setup();
     const result = await run([good, failing(new SourceError("network", "down"))], true);

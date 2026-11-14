@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -72,6 +72,16 @@ describe("asset cache", () => {
     const { http } = fakeHttp({ bytes: new Uint8Array([1, 2]) });
     await expect(ensureAsset(http, dir, "schedules", asset())).rejects.toMatchObject({ kind: "network" });
     expect(existsSync(join(dir, "schedules/games.parquet"))).toBe(false);
+  });
+
+  test("temp files in the cache are removed at the start of the stage (QA-M0-15)", async () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, "pbp"), { recursive: true });
+    writeFileSync(join(dir, "pbp", "play_by_play_2026.parquet.tmp-99"), "partial");
+    writeFileSync(join(dir, "pbp", "keep.parquet"), "x");
+    const { http } = fakeHttp({ release: { assets: [] } });
+    await runStage({ http, today: "2026-07-01", seasons: [2026], datasets: ["pbp"], cacheDir: dir, log: () => {} });
+    expect(readdirSync(join(dir, "pbp"))).toEqual(["keep.parquet"]);
   });
 
   test("a cached file whose size no longer matches its meta is downloaded again (QA-M0-10)", async () => {

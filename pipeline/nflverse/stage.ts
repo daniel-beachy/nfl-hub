@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { seasonForDate } from "../../shared/ids.ts";
 import { NFLVERSE_MANIFEST_VERSION, nflverseManifestSchema, type NflverseFile, type NflverseManifest } from "../../shared/nflverse.ts";
-import { isMain, parseArgs, REPO_ROOT, writeFileAtomic } from "../lib/files.ts";
+import { isMain, parseArgs, removeStaleTemps, REPO_ROOT, writeFileAtomic } from "../lib/files.ts";
 import { createHttp, toSourceError, type Http } from "../lib/http.ts";
 import { DATASET_IDS, DATASETS, type Dataset, type DatasetId } from "./datasets.ts";
 import { ensureAsset, evictCached, listAssets, readCached, type Asset } from "./download.ts";
@@ -91,6 +91,8 @@ export interface StageOptions {
 /** Runs the stage. Returns the manifest, or throws listing every problem found. */
 export async function runStage(o: StageOptions): Promise<NflverseManifest> {
   const log = o.log ?? console.log;
+  const temps = removeStaleTemps(o.cacheDir ?? CACHE_DIR);
+  if (temps > 0) log(`  removed ${temps} partial download(s) left by an earlier run`);
   const current = seasonForDate(o.today);
   // nflverse publishes a season's files after its first games (early September).
   const inSeason = o.today >= `${current}-09-15`;

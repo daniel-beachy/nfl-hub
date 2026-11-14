@@ -4,7 +4,7 @@ import {
   SNAPSHOT_SCHEMA_VERSION, snapshotPath, snapshotSchema, type Snapshot, type SnapshotContext, type SourceBlock,
 } from "../shared/snapshot.ts";
 import { fetchContext } from "./context.ts";
-import { isMain, parseArgs, readJsonIfExists, REPO_ROOT, writeFileAtomic } from "./lib/files.ts";
+import { isMain, parseArgs, readJsonIfExists, removeStaleTemps, REPO_ROOT, writeFileAtomic } from "./lib/files.ts";
 import { createHttp, deadlineSignal, withSignal, type Http } from "./lib/http.ts";
 import { ADAPTERS, getAdapter } from "./sources/index.ts";
 import { runAdapter } from "./sources/run.ts";
@@ -60,6 +60,9 @@ export async function capture(options: CaptureOptions): Promise<CaptureResult> {
   const now = options.now ?? (() => new Date());
   const season = seasonForDate(date);
   const path = join(root, snapshotPath(season, date));
+
+  removeStaleTemps(join(root, "data/snapshots"));
+  removeStaleTemps(join(root, "tmp/failed-payloads"));
 
   // An unreadable existing file stops the run: better a loud failure than overwriting observations.
   const onDisk = readJsonIfExists(path);

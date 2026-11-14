@@ -102,7 +102,10 @@ jobs:
         if: always() && hashFiles('cache/nflverse/**/*.parquet.json') != ''
         uses: actions/cache/save@v6
         with:
-          path: cache/nflverse
+          # Never a partial download left by a timed-out run (QA-M0-15).
+          path: |
+            cache/nflverse
+            !cache/nflverse/**/*.tmp-*
           key: nflverse-${{ hashFiles('cache/nflverse/**/*.parquet.json') }}
       - run: scripts/derived.sh push derived
 

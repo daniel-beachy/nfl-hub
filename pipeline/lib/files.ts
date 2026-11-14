@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Repo root, wherever the pipeline is run from. */
@@ -11,6 +11,27 @@ export function writeFileAtomic(path: string, content: string | Uint8Array): voi
   const tmp = `${path}.tmp-${process.pid}`;
   writeFileSync(tmp, content);
   renameSync(tmp, path);
+}
+
+/**
+ * Remove `<file>.tmp-<pid>` leftovers of writeFileAtomic under `dir` (a process killed
+ * between write and rename leaves one; QA-M0-15). Returns how many were removed.
+ */
+export function removeStaleTemps(dir: string): number {
+  let removed = 0;
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true, recursive: true });
+  } catch {
+    return 0; // no such directory yet
+  }
+  for (const e of entries) {
+    if (e.isFile() && /\.tmp-\d+$/.test(e.name)) {
+      rmSync(join(e.parentPath, e.name), { force: true });
+      removed++;
+    }
+  }
+  return removed;
 }
 
 /** Parsed JSON, or undefined when the file does not exist. Other errors throw. */

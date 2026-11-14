@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { teamsInDivision } from "../../shared/teams.ts";
-import { finalize } from "./finalize.ts";
+import { finalize, MAX_ISSUES } from "./finalize.ts";
 import { even, fakeAdapter, fullTeams, parsed } from "./testing.ts";
 
 const ctx = { season: 2026, date: "2026-11-13" };
@@ -142,6 +142,15 @@ describe("finalize", () => {
     const b = finalize(market, parsed({ teams: {} }), ctx);
     expect(b.status).toBe("error");
     expect(b.error?.kind).toBe("market-missing");
+  });
+
+  test("issues are capped at 50, the last one counting the rest (QA-M0-15)", () => {
+    const many = Array.from({ length: 200 }, (_, i) => ({ kind: "unknown-name" as const, message: `Unknown team "X${i}"`, httpStatus: null }));
+    const b = finalize(market, parsed({ issues: many }), ctx);
+    expect(b.issues).toHaveLength(MAX_ISSUES);
+    expect(b.issues[0]!.message).toBe('Unknown team "X0"');
+    expect(b.issues.at(-1)!.message).toBe("151 more issues not listed (unknown-name 151)");
+    expect(b.status).toBe("partial");
   });
 
   test("another season's data is refused outright", () => {

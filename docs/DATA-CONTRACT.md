@@ -82,7 +82,7 @@ Applied identically to every source after its adapter has mapped provider values
 
 ### 2.3 Issues
 
-`{ kind, message, httpStatus, detail?, payloadHead? }`. `kind` is what `docs/RUNBOOK.md` is indexed by:
+`{ kind, message, httpStatus, detail?, payloadHead? }`, at most 50 per block: past that, the 50th says how many more there were, by kind. `kind` is what `docs/RUNBOOK.md` is indexed by:
 
 | Kind | Meaning |
 |---|---|

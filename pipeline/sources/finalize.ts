@@ -13,6 +13,19 @@ import type { AdapterCtx, ParsedSource, SourceAdapter } from "./types.ts";
 
 export type FinalizedBlock = Omit<SourceBlock, "fetchedAt" | "durationMs">;
 
+/** Issues kept per block; the last one then counts the rest (QA-M0-15). */
+export const MAX_ISSUES = 50;
+
+/** Cap a list of issues, replacing the overflow with one issue that counts it by kind. */
+function capIssues(issues: Issue[]): Issue[] {
+  if (issues.length <= MAX_ISSUES) return issues;
+  const rest = issues.slice(MAX_ISSUES - 1);
+  const byKind = new Map<string, number>();
+  for (const i of rest) byKind.set(i.kind, (byKind.get(i.kind) ?? 0) + 1);
+  const counts = [...byKind].map(([k, n]) => `${k} ${n}`).join(", ");
+  return [...issues.slice(0, MAX_ISSUES - 1), issue(rest[0]!.kind, `${rest.length} more issues not listed (${counts})`)];
+}
+
 /** A complete group's raw probabilities must sum inside this range (books carry vig). */
 export const GROUP_SUM_RANGE = [0.95, 1.6] as const;
 /** 14 teams make the playoffs. */
@@ -185,7 +198,7 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
   const status = !hasData ? "error" : issues.length > 0 ? "partial" : "ok";
   const error = status === "ok" ? null : (issues[0] ?? issue("market-missing", "The source returned no usable values"));
   return {
-    status, observedAt: parsed.observedAt, error, issues, teams, awards, coverage, raw,
+    status, observedAt: parsed.observedAt, error, issues: capIssues(issues), teams, awards, coverage, raw,
     ...(Object.keys(normalized).length > 0 && { normalized }),
   };
 }
