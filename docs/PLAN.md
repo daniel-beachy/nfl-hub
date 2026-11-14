@@ -223,7 +223,7 @@ Built in M0-3 (`pipeline/sources/types.ts`); the checks are specified in `docs/D
 
 ### 7.2 Health and issues [F]
 
-- Failure thresholds for opening an issue: `core` after 1 failed day, `standard` after 2, `bonus` after 3.
+- Failure thresholds for opening an issue: `core` after 1 failed day, `standard` after 2, `bonus` after 3. When no market source is ok or fewer than two sources are ok, `overall` is `down` and one `All sources down` issue opens on day 1 (QA-M0-2).
 - One issue per source, labeled `source-down`, titled `Source down: <id>`. The body is regenerated each run: error kind and message, last ok date, link to the failing run and artifact, the adapter file path, and the exact repro command. The issue closes itself with a comment when the source recovers.
 - Stage failures (nflverse, model, compile, deploy) open `pipeline-broken` issues the same way.
 - `health.ts` never fails the workflow; the deploy must still run.

@@ -37,7 +37,7 @@ export type StageHealth = z.infer<typeof stageHealthSchema>;
 export const statusSchema = z.strictObject({
   schemaVersion: z.literal(STATUS_SCHEMA_VERSION),
   generatedAt: isoDateTime,
-  /** ok: nothing wrong. degraded: something is, the site works. down: a core source or stage is failing. */
+  /** ok: nothing wrong. degraded: something is, the site works. down: a core source or stage is failing, no market source is ok, or fewer than two sources are ok. */
   overall: z.enum(["ok", "degraded", "down"]),
   season: z.number().int(),
   sources: z.array(sourceHealthSchema),

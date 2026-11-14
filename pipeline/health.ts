@@ -112,7 +112,8 @@ export function computeStatus(input: StatusInput): Status {
   });
 
   const failing = (s: SourceHealth) => s.status !== "ok";
-  const down = sources.some((s) => s.tier === "core" && failing(s)) || stages.some((s) => s.status !== "ok");
+  const down =
+    sources.some((s) => s.tier === "core" && failing(s)) || stages.some((s) => s.status !== "ok") || sourcesDown(sources) !== null;
   return {
     schemaVersion: STATUS_SCHEMA_VERSION,
     generatedAt,
@@ -126,6 +127,41 @@ export function computeStatus(input: StatusInput): Status {
     },
     runUrl: input.runUrl ?? null,
   };
+}
+
+/** Below this many ok sources there is no usable odds picture. */
+export const MIN_OK_SOURCES = 2;
+export const ALL_SOURCES_TITLE = "All sources down";
+
+/**
+ * Why the sources as a whole are down (QA-M0-2), or null when they are not: no market source
+ * is ok, or fewer than MIN_OK_SOURCES sources are ok. Either way the season pages have no
+ * odds to show, which is a different state from one bonus source missing one market.
+ */
+export function sourcesDown(sources: readonly SourceHealth[]): string | null {
+  const ok = sources.filter((s) => s.status === "ok");
+  const markets = sources.filter((s) => s.kind === "market");
+  if (markets.length > 0 && !markets.some((s) => s.status === "ok")) {
+    return `No market source is ok (${markets.map((s) => `${s.id} ${s.status}`).join(", ")})`;
+  }
+  if (sources.length >= MIN_OK_SOURCES && ok.length < MIN_OK_SOURCES) {
+    return `Only ${ok.length} of ${sources.length} sources are ok (${ok.map((s) => s.id).join(", ") || "none"})`;
+  }
+  return null;
+}
+
+export function allSourcesIssueBody(status: Status, reason: string): string {
+  return [
+    `**${reason}.** The odds pages have nothing current to show; the site keeps the last good data.`,
+    "",
+    ...status.sources.map((s) => `- \`${s.id}\` (${s.tier}): \`${s.status}\`${s.error ? `, ${s.error.kind}: ${s.error.message}` : ""}; last ok ${s.lastOk ?? "never"}`),
+    "",
+    `- Failing run: ${status.runUrl ?? "not run in Actions"}`,
+    "",
+    "When every source fails together the cause is usually ours (the runner's network, a change in `pipeline/lib/http.ts`, `finalize.ts` or `capture.ts`) rather than five providers at once. Start with `docs/RUNBOOK.md` section 1, then `npm run doctor`.",
+    "",
+    "This issue opens on the first such day, is rewritten by every pipeline run and closes itself when the sources recover.",
+  ].join("\n");
 }
 
 /** Untrusted text (a provider's response) made safe to sit inside a fenced block. */
@@ -195,6 +231,9 @@ export function planIssues(status: Status, open: { sources: IssueRef[]; stages: 
     reconcile(s, title, SOURCE_LABEL, open.sources.find((i) => i.title === title),
       s.consecutiveFailures >= ISSUE_THRESHOLD[s.tier], s.status === "ok", () => sourceIssueBody(s, status.runUrl));
   }
+  const reason = sourcesDown(status.sources);
+  reconcile({ issue: null }, ALL_SOURCES_TITLE, SOURCE_LABEL, open.sources.find((i) => i.title === ALL_SOURCES_TITLE),
+    reason !== null, reason === null, () => allSourcesIssueBody(status, reason ?? ""));
   for (const s of status.stages) {
     const title = stageTitle(s.id);
     reconcile(s, title, STAGE_LABEL, open.stages.find((i) => i.title === title),

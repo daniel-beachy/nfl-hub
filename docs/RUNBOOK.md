@@ -14,13 +14,13 @@ The pipeline is built so that nothing breaks for Dan while you work: a failed so
    gh issue view <number>
    ```
 
-   A `source-down` issue names the source, the error **kind** (jump to that section in part 4 below), the message, the last ok date, the failing run and the exact repro command. Issues open after a source has failed for its tier's threshold (core 1 day, standard 2, bonus 3) and close themselves when it recovers.
+   A `source-down` issue names the source, the error **kind** (jump to that section in part 4 below), the message, the last ok date, the failing run and the exact repro command. Issues open after a source has failed for its tier's threshold (core 1 day, standard 2, bonus 3) and close themselves when it recovers. An `All sources down` issue (same label) opens on day 1 when no market source is ok or fewer than two sources are ok: when everything fails at once, suspect our own code or the runner's network before the providers, and start with `npm run doctor`.
 
 2. **status.json** is the whole picture in one file: https://daniel-beachy.github.io/nfl-hub/data/status.json (the status page at https://daniel-beachy.github.io/nfl-hub/ shows the same). Read it like this:
 
    | Field | Meaning |
    |---|---|
-   | `overall` | `ok`; `degraded` (some source not ok, site fine); `down` (a core source or a pipeline stage failing) |
+   | `overall` | `ok`; `degraded` (some source not ok, site fine); `down` (a core source or a pipeline stage failing, no market source ok, or fewer than two sources ok) |
    | `sources[].status` | `ok`, `partial` (some data, something missing), `error` (nothing usable), `missing` (no block in today's snapshot at all: capture did not run it) |
    | `sources[].error` | The first problem: `kind`, `message`, `httpStatus`, `detail` (zod path, metric or failing request) |
    | `sources[].consecutiveFailures`, `lastOk` | How long it has been broken |

@@ -130,6 +130,30 @@ describe("health", () => {
     expect(github.issues[0]!.open).toBe(false);
   });
 
+  test("every source failing is down on day 1, with one 'All sources down' issue that closes on recovery (QA-M0-2)", async () => {
+    const { log, github } = await runDays([
+      snap(1, { "espn-fpi": ok, polymarket: ok, bovada: ok }),
+      snap(2, { "espn-fpi": down, polymarket: down, bovada: down }),
+      snap(3, { "espn-fpi": down, polymarket: down, bovada: down }),
+      snap(4, { "espn-fpi": ok, polymarket: ok, bovada: ok }),
+    ]);
+    expect(log.map((d) => d.status.overall)).toEqual(["ok", "down", "down", "ok"]);
+    const all = github.issues.filter((i) => i.title === "All sources down");
+    expect(all).toHaveLength(1);
+    expect(all[0]).toMatchObject({ labels: [SOURCE_LABEL], open: false });
+    expect(log[1]!.actions).toContain("create");
+    expect(all[0]!.body).toContain("No market source is ok");
+  });
+
+  test("no market source ok, or fewer than two sources ok, is down", () => {
+    const at = (sources: Snapshot["sources"]) =>
+      computeStatus({ adapters, snapshots: [snap(1, sources)], today: day(1), now: new Date(`${day(1)}T09:00:00Z`) }).overall;
+    expect(at({ "espn-fpi": ok, polymarket: down, bovada: down })).toBe("down"); // only a forecast: no odds at all
+    expect(at({ "espn-fpi": down, polymarket: ok, bovada: down })).toBe("down"); // one source left
+    expect(at({ "espn-fpi": down, polymarket: ok, bovada: ok })).toBe("degraded");
+    expect(at({ "espn-fpi": ok, polymarket: ok, bovada: down })).toBe("degraded");
+  });
+
   test("no snapshots at all", () => {
     const status = computeStatus({ adapters, snapshots: [], today: day(1), now: new Date(`${day(1)}T09:00:00Z`) });
     expect(status.overall).toBe("down");

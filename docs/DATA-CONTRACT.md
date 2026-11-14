@@ -139,7 +139,7 @@ A source appears under a metric only if it has at least one value, so the app sh
 }
 ```
 
-`overall` is `down` when a `core` source or a pipeline stage is failing, `degraded` when anything else is not `ok`, and `ok` otherwise.
+`overall` is `down` when a `core` source or a pipeline stage is failing, or when the sources as a whole are down: no `market` source is `ok`, or fewer than two sources are `ok` (`sourcesDown` in `pipeline/health.ts`). It is `degraded` when anything else is not `ok`, and `ok` otherwise. When the sources as a whole are down, one `source-down` issue titled `All sources down` opens on the first such day, beside the per-source issues, and closes when they recover.
 
 The `nflverse` stage's `detail` names the newest play-by-play file and when nflverse last rebuilt it, from the manifest below.
 
