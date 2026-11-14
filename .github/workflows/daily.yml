@@ -123,14 +123,20 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: scripts/derived.sh fetch derived
-      - name: Forced failure (testing)
-        if: inputs.fail_job == 'health'
-        run: exit 1
-      - run: npm run health
+      - id: fetch
+        run: scripts/derived.sh fetch derived
+      # A crash inside health.ts writes a 'down' status.json and fails this step (QA-M0-8).
+      # fail_job=health makes health.ts itself throw, so the test exercises that real path.
+      - name: Health
+        run: npm run health
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
-      - run: scripts/derived.sh push derived
+          HEALTH_FORCE_FAIL: ${{ inputs.fail_job == 'health' && '1' || '' }}
+      # Pushed even when health failed, so the 'down' status reaches the site. Never after a
+      # failed fetch: that would replace the branch with an empty directory.
+      - name: Publish status.json
+        if: always() && steps.fetch.outcome == 'success'
+        run: scripts/derived.sh push derived
 
   deploy:
     needs: [capture, nflverse, health]

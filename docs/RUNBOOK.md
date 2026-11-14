@@ -179,7 +179,7 @@ gh run view <run-id> --log-failed
   - *Not in the release*: the file was renamed or not published. List the release: `gh api repos/nflverse/nflverse-data/releases/tags/<tag> --jq '.assets[].name'`. Before September 15 a missing current-season file is expected and only noted.
   - *Unsupported compression*: nflverse changed parquet codec. Add `hyparquet-compressors` and pass its `compressors` to `parquetReadObjects` in `pipeline/nflverse/read.ts`.
   - *Incomplete download*: transient; the next run retries.
-- **health:** never fails the workflow by design; if it errors it logs `health failed` and status.json keeps its previous version.
+- **health:** if `health.ts` crashes, status.json becomes a minimal `overall: "down"` file with one `health` stage error naming the exception, the job fails (the run shows red; no issue opens, since health is what opens issues) and deploy still runs. Read the `Health` step's log for the stack; reproduce with `npm run health -- --no-issues`. `fail_job=health` sets `HEALTH_FORCE_FAIL` to test this path.
 - **deploy:** runs `npm run check` and publishes. If it fails, `main` does not build: run `npm run check` locally and fix. The live site stays on the previous deploy.
 
 To test the failure path itself: `gh workflow run daily.yml -f fail_job=nflverse` (or `capture`, `health`).

@@ -1,7 +1,10 @@
-import { describe, expect, test } from "vitest";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { describe, expect, test, vi } from "vitest";
 import type { Snapshot, SourceBlock } from "../shared/snapshot.ts";
 import { statusSchema } from "../shared/status.ts";
-import { computeStatus, syncIssues, SOURCE_LABEL } from "./health.ts";
+import { computeStatus, healthMain, syncIssues, SOURCE_LABEL } from "./health.ts";
 import type { IssueClient, IssueRef } from "./lib/github.ts";
 import { fakeAdapter } from "./sources/testing.ts";
 
@@ -159,5 +162,45 @@ describe("health", () => {
     expect(status.overall).toBe("down");
     expect(status.sources.every((s) => s.status === "missing" && s.lastOk === null)).toBe(true);
     expect(status.dataFreshness.snapshots).toBeNull();
+  });
+});
+
+describe("health crashing (QA-M0-8)", () => {
+  const setup = () => {
+    const root = mkdtempSync(join(tmpdir(), "nfl-hub-health-"));
+    const out = join(root, "derived", "status.json");
+    const now = new Date("2026-11-14T09:00:00Z");
+    const read = () => statusSchema.parse(JSON.parse(readFileSync(out, "utf8")));
+    return { root, out, now, read };
+  };
+  const quiet = () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  };
+
+  test.each([
+    ["an exception inside health", { NEEDS_JSON: "{not json" }],
+    ["the forced-failure switch the workflow uses", { HEALTH_FORCE_FAIL: "1" }],
+  ])("%s writes a 'down' status.json with a health stage error and exits 1", async (_name, env) => {
+    quiet();
+    const { root, out, now, read } = setup();
+    // Yesterday's file said ok: it must not survive the crash.
+    mkdirSync(join(root, "derived"));
+    writeFileSync(out, '{"overall":"ok"}');
+    const code = await healthMain({ root, out, now, noIssues: true, env: { ...env, GITHUB_RUN_ID: "7", GITHUB_SERVER_URL: "https://github.com", GITHUB_REPOSITORY: "o/r" } });
+    expect(code).toBe(1);
+    const status = read();
+    expect(status).toMatchObject({ overall: "down", sources: [], runUrl: "https://github.com/o/r/actions/runs/7" });
+    expect(status.stages).toEqual([expect.objectContaining({ id: "health", status: "error", detail: expect.stringContaining("health.ts crashed") })]);
+    vi.restoreAllMocks();
+  });
+
+  test("a normal run exits 0", async () => {
+    quiet();
+    const { root, out, now, read } = setup();
+    expect(await healthMain({ root, out, now, noIssues: true, env: {} })).toBe(0);
+    expect(read().stages.map((s) => s.id)).toEqual(["capture"]);
+    vi.restoreAllMocks();
   });
 });

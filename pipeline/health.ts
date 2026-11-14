@@ -10,7 +10,7 @@ import { ADAPTERS } from "./sources/index.ts";
 import type { SourceAdapter } from "./sources/types.ts";
 
 // Turns the snapshots into status.json and keeps GitHub issues in step with it
-// (docs/PLAN.md 7.2, docs/DATA-CONTRACT.md 4). Never fails the workflow.
+// (docs/PLAN.md 7.2, docs/DATA-CONTRACT.md 4). A crash writes a 'down' status.json and exits 1.
 //   npm run health                 write derived/status.json; sync issues if GITHUB_TOKEN is set
 //   npm run health -- --no-issues  write status.json only
 
@@ -259,42 +259,95 @@ export async function syncIssues(status: Status, client: IssueClient): Promise<I
   return actions;
 }
 
-if (isMain(import.meta.url)) {
-  // Whatever happens here, exit 0: the deploy must still run.
-  try {
-    const args = parseArgs(process.argv.slice(2));
-    const out = join(REPO_ROOT, typeof args.out === "string" ? args.out : "derived", "status.json");
-    const now = new Date();
-    const today = now.toISOString().slice(0, 10);
-    const { snapshots, unreadable } = loadSnapshots(REPO_ROOT, seasonForDate(today));
-    if (unreadable.length) console.warn(`Unreadable snapshot files skipped: ${unreadable.join(", ")}`);
+export interface HealthRun {
+  root: string;
+  /** Where status.json goes. */
+  out: string;
+  env: NodeJS.ProcessEnv;
+  noIssues?: boolean;
+  now?: Date;
+  /** Issue client override, for tests. */
+  issues?: IssueClient;
+}
 
-    const env = process.env;
-    const jobs = Object.fromEntries(
-      Object.entries(JSON.parse(env.NEEDS_JSON || "{}") as Record<string, { result: string }>).map(([id, j]) => [id, j.result]),
-    );
-    const runUrl = env.GITHUB_RUN_ID ? `${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}` : null;
-    const previous = statusSchema.safeParse(readJsonIfExists(out)).data;
-    const nflverse = nflverseManifestSchema.safeParse(readJsonIfExists(join(out, "..", "nflverse/manifest.json"))).data;
-    const status = computeStatus({ adapters: ADAPTERS, snapshots, today, now, jobs, previous, runUrl, nflverse });
+/** Build and write status.json, syncing issues when a token is set. Throws on any failure. */
+export async function runHealth(o: HealthRun): Promise<Status> {
+  const { root, out, env } = o;
+  if (env.HEALTH_FORCE_FAIL) throw new Error("Forced failure (HEALTH_FORCE_FAIL is set; testing only)");
+  const now = o.now ?? new Date();
+  const today = now.toISOString().slice(0, 10);
+  const { snapshots, unreadable } = loadSnapshots(root, seasonForDate(today));
+  if (unreadable.length) console.warn(`Unreadable snapshot files skipped: ${unreadable.join(", ")}`);
 
-    if (args["no-issues"] || !env.GITHUB_TOKEN || !env.GITHUB_REPOSITORY) {
-      const planned = planIssues(status, { sources: [], stages: [] });
-      console.log(`Issue sync skipped (no token or --no-issues). It would open: ${planned.map((a) => (a.type === "create" ? a.title : "")).join("; ") || "nothing"}`);
-    } else {
-      try {
-        const actions = await syncIssues(status, githubIssues(env.GITHUB_REPOSITORY, env.GITHUB_TOKEN));
-        console.log(`Issue sync: ${actions.map((a) => `${a.type} ${"title" in a ? a.title : `#${a.number}`}`).join("; ") || "nothing to do"}`);
-      } catch (err) {
-        console.error(`Issue sync failed, status.json is still written: ${String(err)}`);
-      }
+  const jobs = Object.fromEntries(
+    Object.entries(JSON.parse(env.NEEDS_JSON || "{}") as Record<string, { result: string }>).map(([id, j]) => [id, j.result]),
+  );
+  const previous = statusSchema.safeParse(readJsonIfExists(out)).data;
+  const nflverse = nflverseManifestSchema.safeParse(readJsonIfExists(join(out, "..", "nflverse/manifest.json"))).data;
+  const status = computeStatus({ adapters: ADAPTERS, snapshots, today, now, jobs, previous, runUrl: runUrlFrom(env), nflverse });
+
+  const client = o.issues ?? (env.GITHUB_TOKEN && env.GITHUB_REPOSITORY ? githubIssues(env.GITHUB_REPOSITORY, env.GITHUB_TOKEN) : undefined);
+  if (o.noIssues || !client) {
+    const planned = planIssues(status, { sources: [], stages: [] });
+    console.log(`Issue sync skipped (no token or --no-issues). It would open: ${planned.map((a) => (a.type === "create" ? a.title : "")).join("; ") || "nothing"}`);
+  } else {
+    try {
+      const actions = await syncIssues(status, client);
+      console.log(`Issue sync: ${actions.map((a) => `${a.type} ${"title" in a ? a.title : `#${a.number}`}`).join("; ") || "nothing to do"}`);
+    } catch (err) {
+      console.error(`Issue sync failed, status.json is still written: ${String(err)}`);
     }
-    writeFileAtomic(out, `${JSON.stringify(statusSchema.parse(status), null, 1)}\n`);
-    console.log(`overall: ${status.overall}`);
-    for (const s of status.sources) console.log(`  ${s.status.padEnd(7)} ${s.id.padEnd(11)} last ok ${s.lastOk ?? "never"}${s.issue ? ` (issue #${s.issue})` : ""}`);
-    for (const s of status.stages) console.log(`  ${s.status.padEnd(7)} stage ${s.id}: ${s.detail}`);
-    console.log(`Wrote ${out}`);
+  }
+  writeFileAtomic(out, `${JSON.stringify(statusSchema.parse(status), null, 1)}\n`);
+  console.log(`overall: ${status.overall}`);
+  for (const s of status.sources) console.log(`  ${s.status.padEnd(7)} ${s.id.padEnd(11)} last ok ${s.lastOk ?? "never"}${s.issue ? ` (issue #${s.issue})` : ""}`);
+  for (const s of status.stages) console.log(`  ${s.status.padEnd(7)} stage ${s.id}: ${s.detail}`);
+  console.log(`Wrote ${out}`);
+  return status;
+}
+
+const runUrlFrom = (env: NodeJS.ProcessEnv) =>
+  env.GITHUB_RUN_ID ? `${env.GITHUB_SERVER_URL}/${env.GITHUB_REPOSITORY}/actions/runs/${env.GITHUB_RUN_ID}` : null;
+
+/**
+ * What status.json says when health itself crashed (QA-M0-8): overall down, one `health`
+ * stage error with the message, nothing else claimed. Better than leaving yesterday's "ok".
+ */
+export function failureStatus(err: unknown, now: Date, runUrl: string | null): Status {
+  const message = err instanceof Error ? err.message : String(err);
+  return statusSchema.parse({
+    schemaVersion: STATUS_SCHEMA_VERSION,
+    generatedAt: now.toISOString(),
+    overall: "down",
+    season: seasonForDate(now.toISOString().slice(0, 10)),
+    sources: [],
+    stages: [{ id: "health", status: "error", lastOk: null, detail: `health.ts crashed: ${message}`.slice(0, 2000), issue: null }],
+    dataFreshness: {},
+    runUrl,
+  });
+}
+
+/** runHealth, and on any failure a `down` status.json. Returns the exit code: 1 on failure. */
+export async function healthMain(o: HealthRun): Promise<number> {
+  try {
+    await runHealth(o);
+    return 0;
   } catch (err) {
     console.error(`health failed: ${err instanceof Error ? err.stack : String(err)}`);
+    try {
+      writeFileAtomic(o.out, `${JSON.stringify(failureStatus(err, o.now ?? new Date(), runUrlFrom(o.env)), null, 1)}\n`);
+      console.error(`Wrote a 'down' status to ${o.out}`);
+    } catch (writeErr) {
+      console.error(`Could not write the failure status either: ${String(writeErr)}`);
+    }
+    return 1;
   }
+}
+
+if (isMain(import.meta.url)) {
+  // A crash writes a 'down' status.json and fails this job, so it is seen (QA-M0-8). The
+  // deploy job runs regardless (`if: always()` in daily.yml).
+  const args = parseArgs(process.argv.slice(2));
+  const out = join(REPO_ROOT, typeof args.out === "string" ? args.out : "derived", "status.json");
+  process.exitCode = await healthMain({ root: REPO_ROOT, out, env: process.env, noIssues: args["no-issues"] === true });
 }
