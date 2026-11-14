@@ -60,7 +60,7 @@ One file per UTC day holding what every source said that day. Observations canno
 ### 2.1 Rules
 
 - A metric a source does not offer is absent. Nothing is zero-filled or null-filled.
-- `context.lastCompletedWeek` is the last regular-season week with every game final (18 in the postseason, `null` otherwise). `gamesInProgress: true` tells the weekly view to skip this snapshot.
+- `context.lastCompletedWeek` is the last regular-season week with every game final (18 in the postseason, `null` otherwise). `gamesInProgress: true` tells the weekly view to skip this snapshot. Phase and week are from the day's first capture. A later capture that puts new data into the file (any block replaced by a non-error block) fetches the scoreboard again and ORs `gamesInProgress`, so one block captured during games marks the whole day; once `true` it stays `true`.
 - `observedAt` is the provider's own timestamp when it gives one (ESPN FPI's `lastUpdated`), else `null`.
 - Probabilities are rounded to 4 decimals, wins to 2.
 - Award lists hold real candidates only (no "Other" or placeholder rows), sorted by probability, capped at 25.

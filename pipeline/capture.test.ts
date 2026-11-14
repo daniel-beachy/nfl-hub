@@ -86,6 +86,28 @@ describe("capture", () => {
     expect(onDisk().sources["espn-fpi"]).toMatchObject({ status: "partial", coverage: { superBowl: 32 } });
   });
 
+  test("a later run that replaces a block fetches context again and ORs gamesInProgress (QA-M0-6)", async () => {
+    const root = mkdtempSync(join(tmpdir(), "nfl-hub-capture-"));
+    const onDisk = () => snapshotSchema.parse(JSON.parse(readFileSync(join(root, "data/snapshots/2026", `${date}.json`), "utf8")));
+    const run = (adapters: SourceAdapter[], gamesInProgress: boolean, week = 9) =>
+      capture({ adapters, date, http: noHttp, root, getContext: async () => ({ ...context, gamesInProgress, lastCompletedWeek: week }) });
+
+    await run([good, failing(new SourceError("timeout", "slow"))], false);
+    expect(onDisk().context!.gamesInProgress).toBe(false);
+
+    // Games start; the retry fails again, so nothing captured now made it into the file.
+    await run([good, failing(new SourceError("timeout", "slow"))], true);
+    expect(onDisk().context!.gamesInProgress).toBe(false);
+
+    // The retry succeeds during games: its prices are in-game prices.
+    await run([good, fakeAdapter({ id: "espn-fpi", kind: "forecast" })], true, 10);
+    expect(onDisk().context).toEqual({ ...context, gamesInProgress: true }); // week stays the morning's
+
+    // Once true, a later quiet run never turns it back.
+    await run([good, fakeAdapter({ id: "bovada" })], false);
+    expect(onDisk().context!.gamesInProgress).toBe(true);
+  });
+
   test("dry run writes nothing", async () => {
     const { root, run } = setup();
     const result = await run([good, failing(new SourceError("network", "down"))], true);

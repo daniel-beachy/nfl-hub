@@ -68,29 +68,45 @@ export async function capture(options: CaptureOptions): Promise<CaptureResult> {
   const todo = adapters.filter((a) => existing?.sources[a.id]?.status !== "ok");
   const capturedAt = existing?.capturedAt ?? now().toISOString();
   const sources: Snapshot["sources"] = { ...existing?.sources };
-  let context: SnapshotContext | null = existing?.context ?? null;
+  let fresh: SnapshotContext | null = null;
+  let replaced = false;
+  /**
+   * The day's first context, with gamesInProgress ORed with this run's when this run put new
+   * data into the file (QA-M0-6): one in-game block makes the snapshot in-game. Phase and week
+   * stay the first run's, so a week never looks complete for blocks captured before it was.
+   */
+  const context = (): SnapshotContext | null => {
+    const first = existing?.context ?? null;
+    if (!first) return fresh;
+    if (!replaced || !fresh) return first;
+    return { ...first, gamesInProgress: first.gamesInProgress || fresh.gamesInProgress };
+  };
 
   // Validate before writing: a snapshot that does not match the contract is a bug, not data.
   const build = () =>
-    snapshotSchema.parse({ schemaVersion: SNAPSHOT_SCHEMA_VERSION, season, date, capturedAt, context, sources } satisfies Snapshot);
+    snapshotSchema.parse({
+      schemaVersion: SNAPSHOT_SCHEMA_VERSION, season, date, capturedAt, context: context(), sources,
+    } satisfies Snapshot);
   const write = () => {
     if (!options.dryRun) writeFileAtomic(path, `${JSON.stringify(build())}\n`);
   };
 
   // Context is nice to have: it gets one minute, and a snapshot without it is still a snapshot.
-  const contextWork = existing?.context
-    ? Promise.resolve()
-    : (async () => {
-        const limit = deadlineSignal(CONTEXT_DEADLINE_MS);
-        try {
-          context = await Promise.race([
-            (options.getContext ?? fetchContext)(withSignal(http, limit.signal), season),
-            new Promise<null>((resolve) => limit.signal.addEventListener("abort", () => resolve(null))),
-          ]);
-        } finally {
-          limit.clear();
-        }
-      })();
+  // Fetched on every run that has work, since a block captured now may be captured in-game.
+  const contextWork =
+    todo.length === 0
+      ? Promise.resolve()
+      : (async () => {
+          const limit = deadlineSignal(CONTEXT_DEADLINE_MS);
+          try {
+            fresh = await Promise.race([
+              (options.getContext ?? fetchContext)(withSignal(http, limit.signal), season),
+              new Promise<null>((resolve) => limit.signal.addEventListener("abort", () => resolve(null))),
+            ]);
+          } finally {
+            limit.clear();
+          }
+        })();
 
   // Each source is merged and written the moment it finishes (QA-M0-1): if the job is killed
   // later, everything that finished is already on disk.
@@ -98,7 +114,10 @@ export async function capture(options: CaptureOptions): Promise<CaptureResult> {
     contextWork,
     ...todo.map(async (adapter) => {
       const { block, failedPayload } = await runAdapter(adapter, { season, date, http }, now, options.sourceDeadlineMs);
-      sources[adapter.id] = mergeBlock(sources[adapter.id], block);
+      const before = sources[adapter.id];
+      const kept = mergeBlock(before, block);
+      sources[adapter.id] = kept;
+      if (kept !== before && kept.status !== "error") replaced = true;
       if (failedPayload !== null && !options.dryRun) {
         writeFileAtomic(join(root, "tmp/failed-payloads", `${adapter.id}-${date}.json`), failedPayload);
       }
