@@ -2,6 +2,8 @@
 
 For a Claude session fixing NFL Hub's data pipeline. Read this first; it should be enough to reproduce and locate any fault without reading unrelated code. `docs/SOURCES.md` describes each provider; `docs/DATA-CONTRACT.md` the file shapes; `pipeline/README.md` how the pipeline is built.
 
+**Every date is UTC**: doctor, capture, snapshot file names, issue titles and `status.json`. A US evening already shows tomorrow's date.
+
 The pipeline is built so that nothing breaks for Dan while you work: a failed source or stage never overwrites good data, and the site keeps serving the last good copy. You have time to fix things properly.
 
 ## 1. Find out what is wrong
@@ -41,6 +43,8 @@ The pipeline is built so that nothing breaks for Dan while you work: a failed so
    Doctor prints status, time, coverage, what is short of the adapter's `expects`, and every issue with its kind. It exits 1 if anything is not ok. If doctor is all OK, the failure was transient: say so on the issue and let the next run close it.
 
 ## 2. Reproduce
+
+**First, run `npx vitest run pipeline/sources`** (seconds, no network). If a recorded good-day fixture now fails, our code changed, not the provider: look at recent commits before touching an adapter. If every fixture passes, the provider changed; reproduce live with the commands below.
 
 | What | Command |
 |---|---|
@@ -108,7 +112,7 @@ The provider is serving another season than the capture date implies (ESPN FPI's
 
 ### market-missing
 
-A metric or award in the adapter's `expects` produced no values. **Common causes:** the provider renamed the market (DraftKings and Bovada classify by name; Polymarket by title pattern; Kalshi by series ticker), the season's markets are not listed yet (offseason), or the market has closed. **Fix:** find the new name in the raw response and update the classifier (`classifyFuture`, `classifyMarket`, `classifyTitle` or `SERIES`), with a test case for the new name. If the market is really gone, remove it from `expects` and record that in `docs/SOURCES.md`.
+A metric or award in the adapter's `expects` produced no values. **Common causes:** the provider renamed the market (DraftKings and Bovada classify by name; Polymarket by title pattern; Kalshi by series ticker), the season's markets are not listed yet (offseason), or the market has closed. **Fix:** find the new name in the raw response and update the classifier (`classifyFuture`, `classifyMarket`, `classifyTitle` or `SERIES`), with a test case for the new name. **Kalshi:** the raw response only holds the series we asked for, so a renamed series is not in it. List every series with `curl -s --compressed 'https://api.elections.kalshi.com/trade-api/v2/series?category=Sports' | jq -r '.series[] | select(.ticker | startswith("KXNFL")) | "\(.ticker)  \(.title)"'` (about 6.7 MB) and look for the new ticker. If the market is really gone, remove it from `expects` and record that in `docs/SOURCES.md`.
 
 ### unknown-name
 
@@ -136,7 +140,7 @@ A bug on our side (an exception in our code), or a host not on the allowlist. Th
 
 ### Failed requests among several
 
-DraftKings (athlete lookups), Kalshi (one request per series) and Bovada (four paths) fetch in parts. One failed part makes the block `partial` with an issue whose `detail` names the part (`athlete 3915511`, `KXNFLMVP`, `nfl-awards`) and whose kind is the part's own failure kind above. All parts failing makes the block `error`.
+DraftKings (athlete lookups), Kalshi (one request per series) and Bovada (four paths) fetch in parts. One failed part makes the block `partial` with an issue whose `detail` names the part (`athlete 3915511`, `KXNFLMVP`, `nfl-awards`) and whose kind is the part's own failure kind above. All parts failing makes the block `error` (DraftKings excepted: if every athlete lookup fails it keeps its team markets and is `partial`). A part that answers but is empty is not a failed part: a Kalshi series with no markets for this season shows up as `market-missing` for its metric. Parts also stop at the source's 3-minute deadline; unfinished parts are `timeout` failures with the message "Not finished before the source's deadline".
 
 ## 5. The fix: always with a fixture
 
