@@ -72,6 +72,8 @@ export interface HttpOptions {
   headers?: Record<string, string>;
   /** True when a 2xx body is the source's way of saying "nothing" (Bovada's `{}`). Retried. */
   isEmpty?: (body: unknown) => boolean;
+  /** Abort the request, and any retry not yet made, when this fires (a source's deadline). */
+  signal?: AbortSignal;
 }
 
 export interface HttpDeps {
@@ -96,9 +98,11 @@ export function createHttp(deps: HttpDeps = {}): Http {
   const backoffMs = deps.backoffMs ?? 1500;
   const allowed = deps.allowedHosts ?? ALLOWED_HOSTS;
 
-  async function once(url: string, o: Required<Omit<HttpOptions, "isEmpty" | "headers">> & HttpOptions, binary = false) {
+  async function once(url: string, o: Required<Omit<HttpOptions, "isEmpty" | "headers" | "signal">> & HttpOptions, binary = false) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), o.timeoutMs);
+    const stop = () => controller.abort();
+    o.signal?.addEventListener("abort", stop);
     try {
       let res: Response;
       try {
@@ -113,11 +117,14 @@ export function createHttp(deps: HttpDeps = {}): Http {
           },
         });
       } catch (err) {
+        if (o.signal?.aborted) throw stopped(url);
         if (controller.signal.aborted) throw new SourceError("timeout", `No response within ${o.timeoutMs} ms: ${url}`);
         const cause = err instanceof Error && err.cause instanceof Error ? ` (${err.cause.message})` : "";
         throw new SourceError("network", `${err instanceof Error ? err.message : String(err)}${cause}: ${url}`);
       }
-      const bytes = await readCapped(res, o.maxBytes, url, controller);
+      const bytes = await readCapped(res, o.maxBytes, url, controller).catch((err: unknown) => {
+        throw o.signal?.aborted ? stopped(url) : err;
+      });
       if (!res.ok) {
         const payload = bytes.toString("utf8", 0, Math.min(bytes.length, 64_000));
         throw new SourceError("http-error", `HTTP ${res.status} from ${url}`, { httpStatus: res.status, payload });
@@ -136,21 +143,23 @@ export function createHttp(deps: HttpDeps = {}): Http {
       return body;
     } finally {
       clearTimeout(timer);
+      o.signal?.removeEventListener("abort", stop);
     }
   }
 
-  async function withRetries<T>(url: string, options: HttpOptions, run: (o: Required<Omit<HttpOptions, "isEmpty" | "headers">> & HttpOptions) => Promise<T>): Promise<T> {
+  async function withRetries<T>(url: string, options: HttpOptions, run: (o: Required<Omit<HttpOptions, "isEmpty" | "headers" | "signal">> & HttpOptions) => Promise<T>): Promise<T> {
     const host = new URL(url).host;
     if (!allowed.has(host)) throw new SourceError("internal", `Host not on the allowlist: ${host}`);
     const o = { timeoutMs: 20_000, maxBytes: 5_000_000, attempts: 3, ...options };
     for (let attempt = 1; ; attempt++) {
+      if (o.signal?.aborted) throw stopped(url);
       try {
         return await run(o);
       } catch (err) {
         const e = toSourceError(err);
         const retryable =
           RETRYABLE.has(e.kind) || (e.kind === "http-error" && (e.httpStatus! >= 500 || e.httpStatus === 429));
-        if (!retryable || attempt >= o.attempts) throw e;
+        if (!retryable || attempt >= o.attempts || o.signal?.aborted) throw e;
         await sleep(backoffMs * attempt);
       }
     }
@@ -159,6 +168,32 @@ export function createHttp(deps: HttpDeps = {}): Http {
   return {
     getJson: (url, options = {}) => withRetries(url, options, (o) => once(url, o)),
     getBytes: (url, options = {}) => withRetries(url, options, (o) => once(url, o, true) as Promise<Uint8Array>),
+  };
+}
+
+const stopped = (url: string) => new SourceError("timeout", `Stopped at the source's deadline: ${url}`);
+
+/** The same client with `signal` added to every request. */
+export function withSignal(http: Http, signal: AbortSignal): Http {
+  return {
+    getJson: (url, options = {}) => http.getJson(url, { signal, ...options }),
+    getBytes: (url, options = {}) => http.getBytes(url, { signal, ...options }),
+  };
+}
+
+/** An AbortSignal that fires after `ms`, on the (fakeable) timer clock, plus a way to clear it. */
+export function deadlineSignal(ms: number, parent?: AbortSignal): { signal: AbortSignal; clear: () => void } {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  const onParent = () => controller.abort();
+  if (parent?.aborted) controller.abort();
+  parent?.addEventListener("abort", onParent);
+  return {
+    signal: controller.signal,
+    clear: () => {
+      clearTimeout(timer);
+      parent?.removeEventListener("abort", onParent);
+    },
   };
 }
 

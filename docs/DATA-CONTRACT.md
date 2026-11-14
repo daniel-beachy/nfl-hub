@@ -84,7 +84,7 @@ Applied identically to every source after its adapter has mapped provider values
 
 | Kind | Meaning |
 |---|---|
-| `network`, `timeout`, `http-error`, `too-large`, `not-json` | The request failed after three attempts |
+| `network`, `timeout`, `http-error`, `too-large`, `not-json` | The request failed after three attempts. `timeout` also means the source passed its 3-minute deadline (`SOURCE_DEADLINE_MS` in `pipeline/sources/run.ts`): requests still open are aborted, unfinished parts become `timeout` failures, and an adapter that has not returned 5 s later is an error |
 | `empty-response` | A 2xx whose body is the provider's "nothing here" (Bovada's `{}`) |
 | `schema-drift` | The provider changed shape. `detail` is the path that no longer matches |
 | `season-mismatch` | The provider is serving another season |
@@ -97,7 +97,7 @@ Applied identically to every source after its adapter has mapped provider values
 
 ### 2.4 Capturing twice in a day
 
-`capture` skips sources that are already `ok` today and merges the rest (`mergeBlock`): `ok` is never replaced; `partial` is replaced only by `ok` or by a `partial` with more coverage; an `error` block is replaced by any newer result. A failed fetch therefore never overwrites data. If today's file exists but does not match the schema, capture stops without writing.
+`capture` writes the file each time a source finishes, so a job killed later keeps every source that finished. It skips sources that are already `ok` today and merges the rest (`mergeBlock`): `ok` is never replaced; `partial` is replaced only by `ok` or by a `partial` with more coverage; an `error` block is replaced by any newer result. A failed fetch therefore never overwrites data. If today's file exists but does not match the schema, capture stops without writing.
 
 ## 3. Compiled series
 

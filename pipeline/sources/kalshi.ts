@@ -88,7 +88,7 @@ export const kalshi = defineAdapter({
   },
   payload,
 
-  async fetch({ http }) {
+  async fetch({ http, signal }) {
     const { results, failures } = await fetchParts(Object.keys(SERIES), 4, (s) => s, async (ticker) => {
       const all: unknown[] = [];
       let cursor = "";
@@ -103,7 +103,7 @@ export const kalshi = defineAdapter({
         if (!cursor) break;
       }
       return all;
-    });
+    }, { signal });
     return { series: Object.fromEntries(results), failures };
   },
 

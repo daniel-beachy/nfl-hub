@@ -110,11 +110,11 @@ export const bovada = defineAdapter({
   },
   payload,
 
-  async fetch({ http }) {
+  async fetch({ http, signal }) {
     const isEmpty = (body: unknown) => !Array.isArray(body) || body.length === 0;
     const { results, failures } = await fetchParts(PATHS, 2, (p) => p, (path) =>
       http.getJson(`https://www.bovada.lv/services/sports/event/coupon/events/A/description/football/${path}?lang=en`, { isEmpty }),
-    );
+    { signal });
     return { groups: PATHS.flatMap((p) => (results.get(p) as unknown[] | undefined) ?? []), failures };
   },
 

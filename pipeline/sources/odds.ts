@@ -41,37 +41,69 @@ export function seasonOfSettlement(time: string | number | undefined): number | 
 export const partFailure = z.object({ part: z.string(), kind: z.enum(ISSUE_KINDS), message: z.string() });
 export type PartFailure = z.infer<typeof partFailure>;
 
+export interface PartsOptions {
+  /** When it fires, no new item starts and every unfinished item becomes a `timeout` failure. */
+  signal?: AbortSignal;
+  /** Throw the first error when every item failed (default). False: return the failures. */
+  throwIfAllFail?: boolean;
+}
+
 /**
  * Run `fn` over `items`, at most `limit` at a time. A failing item becomes a PartFailure
  * instead of failing the whole source; if every item fails, the first error is thrown so
- * the block gets that error's kind.
+ * the block gets that error's kind. When `options.signal` fires, the call returns at once
+ * with what finished; items still running or not started are `timeout` failures.
  */
 export async function fetchParts<T, R>(
   items: readonly T[],
   limit: number,
   name: (item: T) => string,
   fn: (item: T) => Promise<R>,
+  options: PartsOptions = {},
 ): Promise<{ results: Map<T, R>; failures: PartFailure[] }> {
+  const { signal, throwIfAllFail = true } = options;
   const results = new Map<T, R>();
-  const failures: PartFailure[] = [];
+  const failed = new Map<T, PartFailure>();
   let firstError: SourceError | undefined;
   let next = 0;
+  let stopped = false;
   const worker = async () => {
-    while (next < items.length) {
+    while (next < items.length && !stopped && !signal?.aborted) {
       const item = items[next++]!;
       try {
-        results.set(item, await fn(item));
+        const value = await fn(item);
+        if (!stopped) results.set(item, value);
       } catch (err) {
+        if (stopped) return;
         const e = toSourceError(err);
         firstError ??= e;
-        failures.push({ part: name(item), kind: e.kind, message: e.message });
+        failed.set(item, { part: name(item), kind: e.kind, message: e.message });
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  if (items.length > 0 && results.size === 0 && firstError) throw firstError;
-  failures.sort((a, b) => a.part.localeCompare(b.part));
-  return { results, failures };
+  const all = Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  if (signal) {
+    let onAbort = () => {};
+    const aborted = new Promise<void>((resolve) => {
+      onAbort = resolve;
+      if (signal.aborted) resolve();
+      signal.addEventListener("abort", onAbort, { once: true });
+    });
+    await Promise.race([all, aborted]);
+    signal.removeEventListener("abort", onAbort);
+  } else {
+    await all;
+  }
+  stopped = true;
+  for (const item of items) {
+    if (results.has(item) || failed.has(item)) continue;
+    const e = new SourceError("timeout", "Not finished before the source's deadline");
+    firstError ??= e;
+    failed.set(item, { part: name(item), kind: e.kind, message: e.message });
+  }
+  if (throwIfAllFail && items.length > 0 && results.size === 0 && firstError) throw firstError;
+  const failures = [...failed.values()].sort((a, b) => a.part.localeCompare(b.part));
+  return { results: new Map(results), failures };
 }
 
 export const failureIssue = (f: PartFailure): Issue => ({

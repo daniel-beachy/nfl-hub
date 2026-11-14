@@ -59,6 +59,24 @@ describe("fetchParts", () => {
       }),
     ).rejects.toMatchObject({ kind: "empty-response" });
   });
+
+  test("at the deadline, what finished is kept and the rest are timeout failures", async () => {
+    const controller = new AbortController();
+    const pending = fetchParts(["a", "b", "c"], 2, (s) => s, (s) =>
+      s === "a" ? Promise.resolve("A") : new Promise<string>(() => {}), { signal: controller.signal });
+    await new Promise((r) => setTimeout(r, 5));
+    controller.abort();
+    const { results, failures } = await pending;
+    expect([...results.entries()]).toEqual([["a", "A"]]);
+    expect(failures.map((f) => [f.part, f.kind])).toEqual([["b", "timeout"], ["c", "timeout"]]);
+  });
+
+  test("throwIfAllFail false returns the failures instead of throwing", async () => {
+    const { results, failures } = await fetchParts(["a"], 1, (s) => s, async () => {
+      throw new SourceError("timeout", "slow");
+    }, { throwIfAllFail: false });
+    expect([results.size, failures.length]).toEqual([0, 1]);
+  });
 });
 
 describe("kalshi prices", () => {

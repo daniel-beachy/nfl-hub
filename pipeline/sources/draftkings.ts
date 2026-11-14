@@ -2,12 +2,17 @@ import { z } from "zod";
 import type { AwardMarket, TeamMetric } from "../../shared/ids.ts";
 import { AWARD_CANDIDATE_CAP } from "../../shared/snapshot.ts";
 import { teamFromEspnId } from "../../shared/teams.ts";
+import { deadlineSignal } from "../lib/http.ts";
 import { americanToProb, failureIssue, fetchParts, partFailure } from "./odds.ts";
 import { defineAdapter, type ParsedSource } from "./types.ts";
 
 // DraftKings futures, as republished by ESPN's core API. See docs/SOURCES.md.
 // One request lists every futures market. Award candidates are athlete references with no
 // name, so the top candidates' names are fetched one athlete at a time.
+
+/** All athlete lookups together, and each one. */
+export const ATHLETE_BUDGET_MS = 60_000;
+const ATHLETE_TIMEOUT_MS = 10_000;
 
 const ref = z.object({ $ref: z.string() });
 const book = z.object({
@@ -77,7 +82,7 @@ export const draftkings = defineAdapter({
   },
   payload,
 
-  async fetch({ http, season }) {
+  async fetch({ http, season, signal }) {
     const list = await http.getJson(
       `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${season}/futures?limit=100`,
     );
@@ -85,10 +90,22 @@ export const draftkings = defineAdapter({
     // reported by the framework when it validates the whole payload.
     const items = z.object({ items: z.array(future) }).safeParse(list);
     if (!items.success) return { items: (list as { items?: unknown })?.items, athletes: {}, failures: [] };
-    const { results, failures } = await fetchParts(topAthletes(items.data.items), 6, (id) => `athlete ${id}`, (id) =>
-      http.getJson(`https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${season}/athletes/${id}`),
-    );
-    return { items: items.data.items, athletes: Object.fromEntries(results), failures };
+    // About 140 lookups for names only: one attempt each and one shared budget, so a slow or
+    // hanging athlete endpoint costs at most ATHLETE_BUDGET_MS and the team markets survive.
+    const budget = deadlineSignal(ATHLETE_BUDGET_MS, signal);
+    try {
+      const { results, failures } = await fetchParts(
+        topAthletes(items.data.items), 6, (id) => `athlete ${id}`,
+        (id) =>
+          http.getJson(`https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${season}/athletes/${id}`, {
+            attempts: 1, timeoutMs: ATHLETE_TIMEOUT_MS, signal: budget.signal,
+          }),
+        { signal: budget.signal, throwIfAllFail: false },
+      );
+      return { items: items.data.items, athletes: Object.fromEntries(results), failures };
+    } finally {
+      budget.clear();
+    }
   },
 
   parse(data) {

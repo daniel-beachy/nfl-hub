@@ -14,7 +14,10 @@ export interface AdapterCtx {
 }
 
 export interface FetchCtx extends AdapterCtx {
+  /** Every request through this client stops when the source's deadline passes. */
   http: Http;
+  /** Fires at the source's deadline (run.ts). Pass it to fetchParts so unfinished parts fail. */
+  signal?: AbortSignal;
 }
 
 /** What an adapter's `parse` returns: provider values mapped to our ids, not yet checked. */

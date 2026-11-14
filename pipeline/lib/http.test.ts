@@ -94,4 +94,23 @@ describe("http helper", () => {
     expect(Buffer.byteLength(head("é".repeat(5000)))).toBeLessThanOrEqual(2048);
     expect(head("short")).toBe("short");
   });
+
+  test("a fired signal aborts the open request and makes no retry", async () => {
+    const controller = new AbortController();
+    let calls = 0;
+    const client = createHttp({
+      allowedHosts,
+      sleep: async () => {},
+      fetch: ((_url: string, init: RequestInit) => {
+        calls++;
+        return new Promise<Response>((_, reject) =>
+          init.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+      }) as typeof fetch,
+    });
+    const pending = client.getJson(URL_OK, { signal: controller.signal, timeoutMs: 60_000 });
+    controller.abort();
+    const err = await pending.catch((e: unknown) => e);
+    expect(err).toMatchObject({ kind: "timeout", message: expect.stringMatching(/deadline/) });
+    expect(calls).toBe(1);
+  });
 });

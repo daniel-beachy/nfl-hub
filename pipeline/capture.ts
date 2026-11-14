@@ -5,7 +5,7 @@ import {
 } from "../shared/snapshot.ts";
 import { fetchContext } from "./context.ts";
 import { isMain, parseArgs, readJsonIfExists, REPO_ROOT, writeFileAtomic } from "./lib/files.ts";
-import { createHttp, type Http } from "./lib/http.ts";
+import { createHttp, deadlineSignal, withSignal, type Http } from "./lib/http.ts";
 import { ADAPTERS, getAdapter } from "./sources/index.ts";
 import { runAdapter } from "./sources/run.ts";
 import type { SourceAdapter } from "./sources/types.ts";
@@ -14,6 +14,8 @@ import type { SourceAdapter } from "./sources/types.ts";
 //   npm run capture                             capture every source that is not ok yet today
 //   npm run capture -- --source polymarket      one source
 //   npm run capture -- --source polymarket --dry-run   print the result, write nothing
+
+const CONTEXT_DEADLINE_MS = 60_000;
 
 const RANK: Record<SourceBlock["status"], number> = { error: 0, partial: 1, ok: 2 };
 const total = (b: SourceBlock) => Object.values(b.coverage).reduce((s, n) => s + (n ?? 0), 0);
@@ -41,6 +43,8 @@ export interface CaptureOptions {
   dryRun?: boolean;
   getContext?: (http: Http, season: number) => Promise<SnapshotContext | null>;
   now?: () => Date;
+  /** Per-source deadline; defaults to SOURCE_DEADLINE_MS. */
+  sourceDeadlineMs?: number;
 }
 
 export interface CaptureResult {
@@ -62,33 +66,49 @@ export async function capture(options: CaptureOptions): Promise<CaptureResult> {
   const existing = onDisk === undefined ? undefined : snapshotSchema.parse(onDisk);
 
   const todo = adapters.filter((a) => existing?.sources[a.id]?.status !== "ok");
-  const [results, context] = await Promise.all([
-    Promise.all(todo.map((a) => runAdapter(a, { season, date, http }, now))),
-    existing?.context ? existing.context : (options.getContext ?? fetchContext)(http, season),
-  ]);
-
+  const capturedAt = existing?.capturedAt ?? now().toISOString();
   const sources: Snapshot["sources"] = { ...existing?.sources };
-  todo.forEach((adapter, i) => {
-    const { block, failedPayload } = results[i]!;
-    sources[adapter.id] = mergeBlock(sources[adapter.id], block);
-    if (failedPayload !== null && !options.dryRun) {
-      writeFileAtomic(join(root, "tmp/failed-payloads", `${adapter.id}-${date}.json`), failedPayload);
-    }
-  });
+  let context: SnapshotContext | null = existing?.context ?? null;
 
   // Validate before writing: a snapshot that does not match the contract is a bug, not data.
-  const snapshot = snapshotSchema.parse({
-    schemaVersion: SNAPSHOT_SCHEMA_VERSION,
-    season,
-    date,
-    capturedAt: existing?.capturedAt ?? now().toISOString(),
-    context,
-    sources,
-  } satisfies Snapshot);
+  const build = () =>
+    snapshotSchema.parse({ schemaVersion: SNAPSHOT_SCHEMA_VERSION, season, date, capturedAt, context, sources } satisfies Snapshot);
+  const write = () => {
+    if (!options.dryRun) writeFileAtomic(path, `${JSON.stringify(build())}\n`);
+  };
+
+  // Context is nice to have: it gets one minute, and a snapshot without it is still a snapshot.
+  const contextWork = existing?.context
+    ? Promise.resolve()
+    : (async () => {
+        const limit = deadlineSignal(CONTEXT_DEADLINE_MS);
+        try {
+          context = await Promise.race([
+            (options.getContext ?? fetchContext)(withSignal(http, limit.signal), season),
+            new Promise<null>((resolve) => limit.signal.addEventListener("abort", () => resolve(null))),
+          ]);
+        } finally {
+          limit.clear();
+        }
+      })();
+
+  // Each source is merged and written the moment it finishes (QA-M0-1): if the job is killed
+  // later, everything that finished is already on disk.
+  await Promise.all([
+    contextWork,
+    ...todo.map(async (adapter) => {
+      const { block, failedPayload } = await runAdapter(adapter, { season, date, http }, now, options.sourceDeadlineMs);
+      sources[adapter.id] = mergeBlock(sources[adapter.id], block);
+      if (failedPayload !== null && !options.dryRun) {
+        writeFileAtomic(join(root, "tmp/failed-payloads", `${adapter.id}-${date}.json`), failedPayload);
+      }
+      write();
+    }),
+  ]);
 
   const written = !options.dryRun && todo.length > 0;
-  if (written) writeFileAtomic(path, `${JSON.stringify(snapshot)}\n`);
-  return { snapshot, path, ran: todo.map((a) => a.id), written };
+  if (written) write(); // once more, with the context if it arrived last
+  return { snapshot: build(), path, ran: todo.map((a) => a.id), written };
 }
 
 /** One line per source, for the workflow log and for `--dry-run`. */

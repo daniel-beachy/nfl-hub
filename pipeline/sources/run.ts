@@ -1,5 +1,5 @@
 import type { SourceBlock } from "../../shared/snapshot.ts";
-import { SourceError, toSourceError } from "../lib/http.ts";
+import { deadlineSignal, SourceError, toSourceError, withSignal } from "../lib/http.ts";
 import { finalize, type FinalizedBlock } from "./finalize.ts";
 import type { AdapterCtx, FetchCtx, SourceAdapter } from "./types.ts";
 
@@ -29,13 +29,35 @@ export interface RunResult {
   failedPayload: string | null;
 }
 
-/** Run one adapter end to end. Never throws: any failure becomes an error block. */
-export async function runAdapter(adapter: SourceAdapter, ctx: FetchCtx, now: () => Date = () => new Date()): Promise<RunResult> {
+/** How long one source may take, network and all (QA-M0-1: the capture job has 10 minutes). */
+export const SOURCE_DEADLINE_MS = 3 * 60_000;
+/** After the deadline, how long an adapter gets to hand back the parts it has before it is cut off. */
+const GRACE_MS = 5_000;
+
+/**
+ * Run one adapter end to end. Never throws: any failure becomes an error block.
+ * At `deadlineMs` every request still open is aborted and unfinished parts become `timeout`
+ * failures; an adapter that still has not returned shortly after is a `timeout` error.
+ */
+export async function runAdapter(
+  adapter: SourceAdapter, ctx: FetchCtx, now: () => Date = () => new Date(), deadlineMs = SOURCE_DEADLINE_MS,
+): Promise<RunResult> {
   const started = now();
   const timing = () => ({ fetchedAt: started.toISOString(), durationMs: Math.max(0, now().getTime() - started.getTime()) });
+  const deadline = deadlineSignal(deadlineMs, ctx.signal);
+  let cutOff: ReturnType<typeof setTimeout> | undefined;
+  const hardStop = new Promise<never>((_, reject) => {
+    cutOff = setTimeout(
+      () => reject(new SourceError("timeout", `${adapter.name} did not finish within ${Math.round(deadlineMs / 1000)} s`)),
+      deadlineMs + GRACE_MS,
+    );
+  });
   let raw: unknown;
   try {
-    raw = await adapter.fetch(ctx);
+    raw = await Promise.race([
+      adapter.fetch({ ...ctx, http: withSignal(ctx.http, deadline.signal), signal: deadline.signal }),
+      hardStop,
+    ]);
     const block = { ...parsePayload(adapter, raw, ctx), ...timing() };
     return { block, failedPayload: block.status === "ok" ? null : JSON.stringify(raw) };
   } catch (err) {
@@ -45,5 +67,8 @@ export async function runAdapter(adapter: SourceAdapter, ctx: FetchCtx, now: () 
       block: { status: "error", observedAt: null, error: issue, issues: [issue], teams: {}, awards: {}, coverage: {}, raw: {}, ...timing() },
       failedPayload: e.payload ?? (raw === undefined ? null : JSON.stringify(raw)),
     };
+  } finally {
+    clearTimeout(cutOff);
+    deadline.clear();
   }
 }
