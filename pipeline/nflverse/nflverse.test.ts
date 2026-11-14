@@ -166,4 +166,38 @@ describe("stage", () => {
     expect(status.dataFreshness.pbp).toBe("2026-11-13");
     expect(status.stages.find((s) => s.id === "nflverse")?.detail).toBe("pbp 2026 updated 2026-11-13T17:11:44Z; 2 files loaded");
   });
+
+  describe("in season, a play-by-play file not rebuilt for more than 3 days is stale (QA-M0-11)", () => {
+    const manifest = (pbpUpdated: string) => ({
+      schemaVersion: 1 as const, generatedAt: "2026-11-13T08:30:00Z", seasons: [2025, 2026], notPublished: [],
+      files: [{ dataset: "pbp" as const, season: 2026, name: "play_by_play_2026.parquet", updatedAt: pbpUpdated, size: 1, rows: 1 }],
+    });
+    const at = (today: string, pbpUpdated: string) =>
+      computeStatus({
+        adapters: [], snapshots: [], today, now: new Date(`${today}T09:00:00Z`),
+        jobs: { capture: "success", nflverse: "success" }, nflverse: manifest(pbpUpdated),
+      }).stages.find((s) => s.id === "nflverse")!;
+
+    test("stale after 3 days in November, with the age in the detail", () => {
+      const stage = at("2026-11-20", "2026-11-13T17:11:44Z");
+      expect(stage.status).toBe("stale");
+      expect(stage.detail).toMatch(/not rebuilt for 6 days/);
+    });
+    test("fresh enough at 2 days", () => {
+      expect(at("2026-11-15", "2026-11-13T17:11:44Z").status).toBe("ok");
+    });
+    test("out of season (July) an old file is normal", () => {
+      expect(at("2027-07-10", "2027-02-20T00:00:00Z").status).toBe("ok");
+    });
+    test("stale makes overall degraded, not down", () => {
+      const today = "2026-11-20";
+      const status = computeStatus({
+        adapters: [], today, now: new Date(`${today}T09:00:00Z`),
+        snapshots: [{ schemaVersion: 1, season: 2026, date: today, capturedAt: `${today}T08:00:00Z`, context: null, sources: {} }],
+        jobs: { capture: "success", nflverse: "success" }, nflverse: manifest("2026-11-13T17:11:44Z"),
+      });
+      expect(status.stages.map((s) => [s.id, s.status])).toEqual([["capture", "ok"], ["nflverse", "stale"]]);
+      expect(status.overall).toBe("degraded");
+    });
+  });
 });

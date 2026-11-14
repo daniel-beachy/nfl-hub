@@ -145,7 +145,7 @@ A source appears under a metric only if it has at least one value, so the app sh
 
 If `health.ts` itself crashes, it writes a minimal file instead: `overall: "down"`, `sources: []`, one stage `{ "id": "health", "status": "error", "detail": "health.ts crashed: ..." }`, empty `dataFreshness`. The job fails and the file is still published, so the site never keeps showing an old `ok`.
 
-The `nflverse` stage's `detail` names the newest play-by-play file and when nflverse last rebuilt it, from the manifest below.
+The `nflverse` stage's `detail` names the newest play-by-play file and when nflverse last rebuilt it, from the manifest below. From September 15 to February 15, if the current season's play-by-play has not been rebuilt for more than 3 days, the stage is `stale` (the job ran, the data stopped): `overall` becomes `degraded` (a stage `error` makes it `down`) and a `pipeline-broken` issue opens.
 
 ## 5. nflverse manifest
 

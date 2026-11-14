@@ -25,7 +25,7 @@ The pipeline is built so that nothing breaks for Dan while you work: a failed so
    | `sources[].error` | The first problem: `kind`, `message`, `httpStatus`, `detail` (zod path, metric or failing request) |
    | `sources[].consecutiveFailures`, `lastOk` | How long it has been broken |
    | `sources[].coverage` | Teams per team metric, candidates per award, as of today |
-   | `stages[]` | `capture`, `nflverse` (and later `model`, `compile`): `ok` or `error`, with `detail` |
+   | `stages[]` | `capture`, `nflverse` (and later `model`, `compile`): `ok`, `error`, or `stale` (nflverse only: in season, the current play-by-play not rebuilt for over 3 days; check https://github.com/nflverse/nflverse-data/releases/tag/pbp, usually theirs to fix), with `detail` |
    | `dataFreshness` | Latest snapshot date and latest play-by-play rebuild date |
    | `runUrl` | The workflow run that produced the file |
 

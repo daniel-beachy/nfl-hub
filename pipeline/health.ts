@@ -57,6 +57,15 @@ export interface StatusInput {
   nflverse?: NflverseManifest;
 }
 
+/** Days without a rebuild before the current play-by-play counts as stale, in season. */
+export const PBP_STALE_DAYS = 3;
+
+/** From mid-September (first games) to mid-February (Super Bowl), when pbp is rebuilt often. */
+function inSeason(today: string): boolean {
+  const season = seasonForDate(today);
+  return today >= `${season}-09-15` && today <= `${season + 1}-02-15`;
+}
+
 /** The newest play-by-play file in an nflverse manifest. */
 function newestPbp(m: NflverseManifest | undefined) {
   return m?.files.filter((f) => f.dataset === "pbp").sort((a, b) => (a.season ?? 0) - (b.season ?? 0)).at(-1);
@@ -104,20 +113,29 @@ export function computeStatus(input: StatusInput): Status {
       detail = ok ? `snapshot for ${today} written` : `${have} (${detail})`;
     }
     const pbp = newestPbp(nflverse);
+    let stale = false;
     if (id === "nflverse" && ok && nflverse && pbp) {
       const waiting = nflverse.notPublished.length ? `; not yet published: ${nflverse.notPublished.join(", ")}` : "";
       detail = `pbp ${pbp.season} updated ${pbp.updatedAt}; ${nflverse.files.length} files loaded${waiting}`;
+      // In season nflverse rebuilds the current play-by-play within a day or two of games
+      // (docs/SOURCES.md). Older than that, the stage ran fine but the data stopped (QA-M0-11).
+      const ageDays = (now.getTime() - Date.parse(pbp.updatedAt)) / 86_400_000;
+      if (inSeason(today) && pbp.season === seasonForDate(today) && ageDays > PBP_STALE_DAYS) {
+        stale = true;
+        detail = `pbp ${pbp.season} not rebuilt for ${Math.floor(ageDays)} days (updated ${pbp.updatedAt}); nflverse may have stopped`;
+      }
     }
-    return { id, status: ok ? "ok" : "error", lastOk: ok ? generatedAt : (before?.lastOk ?? null), detail, issue: null };
+    const status = !ok ? "error" : stale ? "stale" : "ok";
+    return { id, status, lastOk: status === "ok" ? generatedAt : (before?.lastOk ?? null), detail, issue: null };
   });
 
   const failing = (s: SourceHealth) => s.status !== "ok";
   const down =
-    sources.some((s) => s.tier === "core" && failing(s)) || stages.some((s) => s.status !== "ok") || sourcesDown(sources) !== null;
+    sources.some((s) => s.tier === "core" && failing(s)) || stages.some((s) => s.status === "error") || sourcesDown(sources) !== null;
   return {
     schemaVersion: STATUS_SCHEMA_VERSION,
     generatedAt,
-    overall: down ? "down" : sources.some(failing) ? "degraded" : "ok",
+    overall: down ? "down" : sources.some(failing) || stages.some((s) => s.status !== "ok") ? "degraded" : "ok",
     season: seasonForDate(today),
     sources,
     stages,
