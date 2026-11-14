@@ -1,8 +1,11 @@
 import { describe, expect, test } from "vitest";
+import { loadFixtures } from "../fixture.ts";
+import { parsePayload } from "./run.ts";
+import { polymarket } from "./polymarket.ts";
 import { SourceError } from "../lib/http.ts";
 import { classifyMarket, medianWins } from "./bovada.ts";
 import { classifyFuture } from "./draftkings.ts";
-import { kalshiPrice } from "./kalshi.ts";
+import { kalshi, kalshiPrice } from "./kalshi.ts";
 import { americanToProb, fetchParts, seasonOfSettlement, teamFromAbbr } from "./odds.ts";
 
 // Unit tests for the M0-7 adapters' helpers. The adapters themselves are covered end to end
@@ -145,5 +148,44 @@ describe("bovada markets", () => {
     expect(medianWins([{ line: 8.5, over: 0.89 }, { line: 9.5, over: 0.75 }])).toBeNull();
     expect(medianWins([{ line: 9.5, over: 0.3 }])).toBeNull();
     expect(medianWins([])).toBeNull();
+  });
+});
+
+describe("renamed price fields are schema drift (QA-M0-3)", () => {
+  const ctx = { season: 2026, date: "2026-11-13" };
+  const fixture = (id: string) => structuredClone(loadFixtures(id).at(-1)!.payload) as Record<string, unknown>;
+  type KalshiMarket = Record<string, unknown>;
+
+  test.each(["yes_ask_dollars", "yes_bid_dollars"])("kalshi without %s on any market", (field) => {
+    const payload = fixture("kalshi") as { series: Record<string, KalshiMarket[]> };
+    for (const markets of Object.values(payload.series)) for (const m of markets) delete m[field];
+    expect(() => parsePayload(kalshi, payload, ctx)).toThrow(
+      expect.objectContaining({ kind: "schema-drift", detail: expect.stringContaining(field) }),
+    );
+  });
+
+  test("kalshi: one series that lost its prices is enough", () => {
+    const payload = fixture("kalshi") as { series: Record<string, KalshiMarket[]> };
+    for (const m of payload.series.KXNFLMVP!) delete m.yes_ask_dollars;
+    expect(() => parsePayload(kalshi, payload, ctx)).toThrow(expect.objectContaining({ kind: "schema-drift", detail: expect.stringContaining("KXNFLMVP") }));
+  });
+
+  test("kalshi: settled markets without a result are drift", () => {
+    const payload = fixture("kalshi") as { series: Record<string, KalshiMarket[]> };
+    for (const markets of Object.values(payload.series)) for (const m of markets) delete m.result;
+    expect(() => parsePayload(kalshi, payload, ctx)).toThrow(expect.objectContaining({ kind: "schema-drift", detail: expect.stringContaining("result") }));
+  });
+
+  test.each(["bestBid", "bestAsk"])("polymarket award markets without %s", (field) => {
+    const payload = fixture("polymarket") as { awards: { markets?: Record<string, unknown>[] }[] };
+    for (const e of payload.awards) for (const m of e.markets ?? []) delete m[field];
+    expect(() => parsePayload(polymarket, payload, ctx)).toThrow(
+      expect.objectContaining({ kind: "schema-drift", detail: expect.stringContaining(field) }),
+    );
+  });
+
+  test("the recorded fixtures still parse ok", () => {
+    expect(parsePayload(kalshi, fixture("kalshi"), ctx).status).toBe("ok");
+    expect(parsePayload(polymarket, fixture("polymarket"), ctx).status).toBe("ok");
   });
 });

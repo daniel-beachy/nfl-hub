@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { AwardMarket, TeamMetric } from "../../shared/ids.ts";
 import { teamFromName } from "../../shared/teams.ts";
-import type { Http } from "../lib/http.ts";
+import { SourceError, type Http } from "../lib/http.ts";
 import { defineAdapter, type ParsedSource } from "./types.ts";
 
 // Polymarket (Gamma API): a prediction market. See docs/SOURCES.md.
@@ -92,6 +92,22 @@ function yesPrice(m: Market): number | null {
   return m.lastTradePrice ?? listed;
 }
 
+/**
+ * bestBid and bestAsk are optional because one market can lack them (nobody bidding), but an
+ * event where no open market has them is a rename (QA-M0-3): the fallback prices would change
+ * every value and still look ok. Throws schema-drift.
+ */
+export function checkPriceFields(e: Event): void {
+  const open = (e.markets ?? []).filter((m) => m.active !== false && !m.closed);
+  for (const field of ["bestBid", "bestAsk"] as const) {
+    if (open.length > 0 && !open.some((m) => m[field] !== undefined)) {
+      throw new SourceError("schema-drift", `Polymarket "${e.title.trim()}": none of ${open.length} open markets has ${field}`, {
+        detail: `events[${JSON.stringify(e.title.trim())}].markets[].${field}`,
+      });
+    }
+  }
+}
+
 export const polymarket = defineAdapter({
   id: "polymarket",
   name: "Polymarket",
@@ -120,6 +136,7 @@ export const polymarket = defineAdapter({
       if (!kind) continue;
       const isAward = "award" in kind;
       if (isAward && out.awards[kind.award]) continue;
+      checkPriceFields(e);
       for (const m of e.markets ?? []) {
         const name = m.groupItemTitle?.trim();
         if (!name || PLACEHOLDER.test(name)) continue;

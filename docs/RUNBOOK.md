@@ -100,6 +100,8 @@ The body was not JSON: usually an HTML error page, a captcha or a maintenance pa
 
 The provider changed shape. The message names the zod path, e.g. `items.0.futures: expected array`; `detail` holds the first path. **Fix:** compare the raw response (part 2) with the adapter's `payload` schema, update the schema and `parse` to the new shape, then re-record the fixture (part 5). Keep optional only the fields you have seen missing.
 
+Kalshi and Polymarket also report drift for optional price fields that vanished everywhere: a series (Kalshi) or event (Polymarket) where no open market carries `yes_bid_dollars`/`yes_ask_dollars` or `bestBid`/`bestAsk`, or (Kalshi) no settled market carries `result`. `detail` is then e.g. `series.KXSB[].yes_ask_dollars`. Look for the renamed field in the raw response; if the field is really absent because a market has no bids at all, that is a false alarm worth one line in the adapter's `checkPriceFields`.
+
 ### season-mismatch
 
 The provider is serving another season than the capture date implies (ESPN FPI's `season`, DraftKings' `/seasons/{year}/` in its refs). **Around the turn of the season** (March, when `seasonForDate` moves on; or September) this can be legitimate for a few days: note it on the issue. Otherwise check `seasonForDate` in `shared/ids.ts` and the URL the adapter builds.

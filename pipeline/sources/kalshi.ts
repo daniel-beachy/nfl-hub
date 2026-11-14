@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { AwardMarket, DivisionName, TeamMetric } from "../../shared/ids.ts";
 import { teamFromKalshiCode, teamFromName, type Team } from "../../shared/teams.ts";
+import { SourceError } from "../lib/http.ts";
 import { failureIssue, fetchParts, partFailure, seasonOfSettlement } from "./odds.ts";
 import { defineAdapter, type ParsedSource } from "./types.ts";
 
@@ -72,6 +73,28 @@ export function kalshiPrice(m: Pick<Market, "status" | "result" | "yes_bid_dolla
   return Number.isFinite(last) && last > 0 ? last : null;
 }
 
+const SETTLED = new Set(["settled", "finalized", "determined"]);
+
+/**
+ * The price fields are optional in the schema because one market can lack them, but a series
+ * where no market has them is a rename, not a quiet market (QA-M0-3): falling back to the
+ * last trade would change every value and still look ok. Throws schema-drift.
+ */
+export function checkPriceFields(ticker: string, markets: readonly Market[]): void {
+  const active = markets.filter((m) => m.status === "active");
+  const settled = markets.filter((m) => SETTLED.has(m.status));
+  const required: [Market[], keyof Market][] = [
+    [active, "yes_bid_dollars"], [active, "yes_ask_dollars"], [settled, "result"],
+  ];
+  for (const [group, field] of required) {
+    if (group.length > 0 && !group.some((m) => m[field] !== undefined)) {
+      throw new SourceError("schema-drift", `Kalshi ${ticker}: none of ${group.length} markets has ${field}`, {
+        detail: `series.${ticker}[].${field}`,
+      });
+    }
+  }
+}
+
 function teamOf(m: Market): Team | undefined {
   const code = m.ticker.split("-").at(-1) ?? "";
   return teamFromKalshiCode(code) ?? teamFromName(m.yes_sub_title);
@@ -112,8 +135,9 @@ export const kalshi = defineAdapter({
     for (const [ticker, markets] of Object.entries(data.series)) {
       const kind = SERIES[ticker];
       if (!kind) continue;
-      for (const m of markets) {
-        if (seasonOfSettlement(m.expected_expiration_time) !== ctx.season) continue;
+      const current = markets.filter((m) => seasonOfSettlement(m.expected_expiration_time) === ctx.season);
+      checkPriceFields(ticker, current);
+      for (const m of current) {
         const name = m.yes_sub_title.trim();
         if (!name || PLACEHOLDER.test(name)) continue;
         const prob = kalshiPrice(m);
