@@ -3,6 +3,7 @@ import type { AwardMarket, DivisionName, TeamMetric } from "../../shared/ids.ts"
 import { teamFromKalshiCode, teamFromName, type Team } from "../../shared/teams.ts";
 import { SourceError } from "../lib/http.ts";
 import { failureIssue, fetchParts, partFailure, seasonOfSettlement } from "./odds.ts";
+import { expectShape } from "./run.ts";
 import { defineAdapter, type ParsedSource } from "./types.ts";
 
 // Kalshi: a regulated prediction exchange. See docs/SOURCES.md.
@@ -118,9 +119,11 @@ export const kalshi = defineAdapter({
       for (let page = 0; page < MAX_PAGES; page++) {
         // No status filter: a settled market (a clinched division) still carries its result.
         const url = `${BASE}/markets?series_ticker=${ticker}&limit=${PAGE}${cursor ? `&cursor=${cursor}` : ""}`;
-        const body = z
-          .object({ markets: z.array(z.unknown()), cursor: z.string().nullish() })
-          .parse(await http.getJson(url, { maxBytes: 20_000_000 }));
+        const body = expectShape(
+          z.object({ markets: z.array(z.unknown()), cursor: z.string().nullish() }),
+          await http.getJson(url, { maxBytes: 20_000_000 }),
+          `Kalshi ${ticker}`,
+        );
         all.push(...body.markets);
         cursor = body.cursor ?? "";
         if (!cursor) break;

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { AwardMarket, TeamMetric } from "../../shared/ids.ts";
 import { teamFromName } from "../../shared/teams.ts";
 import { SourceError, type Http } from "../lib/http.ts";
+import { expectShape } from "./run.ts";
 import { defineAdapter, type ParsedSource } from "./types.ts";
 
 // Polymarket (Gamma API): a prediction market. See docs/SOURCES.md.
@@ -34,7 +35,7 @@ async function eventsByTag(http: Http, tag: string): Promise<unknown[]> {
   for (let page = 0; page < MAX_PAGES; page++) {
     // No `closed` filter: a market that has resolved (a clinched division) still carries its final price.
     const url = `https://gamma-api.polymarket.com/events?tag_slug=${tag}&limit=${PAGE}&offset=${page * PAGE}`;
-    const batch = z.array(z.unknown()).parse(await http.getJson(url, { maxBytes: 30_000_000 }));
+    const batch = expectShape(z.array(z.unknown()), await http.getJson(url, { maxBytes: 30_000_000 }), `Polymarket events (${tag})`);
     all.push(...batch);
     if (batch.length < PAGE) break;
   }

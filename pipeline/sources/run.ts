@@ -1,21 +1,31 @@
+import type { z } from "zod";
 import type { SourceBlock } from "../../shared/snapshot.ts";
 import { deadlineSignal, SourceError, toSourceError, withSignal } from "../lib/http.ts";
 import { finalize, type FinalizedBlock } from "./finalize.ts";
 import type { AdapterCtx, FetchCtx, SourceAdapter } from "./types.ts";
 
-/** Validate a raw payload against the adapter's provider schema. Throws schema-drift. */
-export function validatePayload(adapter: SourceAdapter, raw: unknown): unknown {
-  const result = adapter.payload.safeParse(raw);
+/**
+ * Parse `raw` with `schema`, or throw schema-drift naming the paths, with the raw response
+ * kept for the failed-payloads artifact. Adapters use it for responses checked inside
+ * `fetch` (QA-M0-7), so a shape error there is never an `internal` ZodError dump.
+ */
+export function expectShape<T>(schema: z.ZodType<T>, raw: unknown, who: string): T {
+  const result = schema.safeParse(raw);
   if (result.success) return result.data;
   const detail = result.error.issues
     .slice(0, 5)
     .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
     .join("; ");
   const more = result.error.issues.length > 5 ? ` (+${result.error.issues.length - 5} more)` : "";
-  throw new SourceError("schema-drift", `${adapter.name} changed shape at ${detail}${more}`, {
+  throw new SourceError("schema-drift", `${who} changed shape at ${detail}${more}`.replace(/\s*\n\s*/g, " "), {
     detail: result.error.issues[0]?.path.join(".") ?? "",
-    payload: JSON.stringify(raw),
+    payload: JSON.stringify(raw) ?? String(raw),
   });
+}
+
+/** Validate a raw payload against the adapter's provider schema. Throws schema-drift. */
+export function validatePayload(adapter: SourceAdapter, raw: unknown): unknown {
+  return expectShape(adapter.payload, raw, adapter.name);
 }
 
 /** Everything after the network: validate, map, check, normalize. Pure; used by fixtures too. */

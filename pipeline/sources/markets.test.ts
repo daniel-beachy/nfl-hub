@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { loadFixtures } from "../fixture.ts";
-import { parsePayload } from "./run.ts";
+import { parsePayload, runAdapter } from "./run.ts";
+import type { Http } from "../lib/http.ts";
 import { polymarket } from "./polymarket.ts";
 import { SourceError } from "../lib/http.ts";
 import { classifyMarket, medianWins } from "./bovada.ts";
@@ -187,5 +188,23 @@ describe("renamed price fields are schema drift (QA-M0-3)", () => {
   test("the recorded fixtures still parse ok", () => {
     expect(parsePayload(kalshi, fixture("kalshi"), ctx).status).toBe("ok");
     expect(parsePayload(polymarket, fixture("polymarket"), ctx).status).toBe("ok");
+  });
+});
+
+describe("a wrong response shape inside fetch is schema drift with the payload (QA-M0-7)", () => {
+  const ctx = { season: 2026, date: "2026-11-13" };
+  const answering = (body: unknown): Http => ({
+    getJson: async () => body,
+    getBytes: async () => new Uint8Array(),
+  });
+  test.each([
+    ["polymarket", {}], ["polymarket", null], ["kalshi", {}], ["kalshi", null], ["kalshi", []],
+  ] as const)("%s answering %j", async (id, body) => {
+    const adapter = id === "kalshi" ? kalshi : polymarket;
+    const { block, failedPayload } = await runAdapter(adapter, { ...ctx, http: answering(body) });
+    expect(block.status).toBe("error");
+    expect(block.error).toMatchObject({ kind: "schema-drift", payloadHead: JSON.stringify(body) });
+    expect(block.error!.message).not.toContain("\n");
+    expect(failedPayload).toBe(JSON.stringify(body));
   });
 });
