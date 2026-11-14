@@ -396,7 +396,7 @@ Checkpoint: Dan sees a bare status page listing every source green, and three da
 
 | # | Task | Who | Done when |
 |---|---|---|---|
-| M1-1 | Hub model: ratings, simulation, tiebreakers, `docs/MODEL.md` | F | 2020 to 2025 final seeds reproduce; evaluation numbers recorded |
+| M1-1 ✅ | Hub model: ratings, simulation, tiebreakers, `docs/MODEL.md` | F | 2020 to 2025 final seeds reproduce; evaluation numbers recorded (2026-11-13: seeds reproduce; held-out Brier 0.2225 against the spread's 0.2094, so the 0.01 target in 8.3 was missed by 0.003) |
 | M1-2 | Model backfill 2020 to 2026 and daily run | O | Weekly forecasts exist for every completed week |
 | M1-3 | Import v3 2026 snapshots | O | Ten dates present; spot-check three values per source against v3's live site |
 | M1-4 | `compile.ts`: series, weekly, consensus | O | Unit tests for alignment, gaps and consensus |
