@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { AwardMarket, DivisionName, TeamMetric } from "../../shared/ids.ts";
 import { teamFromKalshiCode, teamFromName, type Team } from "../../shared/teams.ts";
 import { SourceError } from "../lib/http.ts";
-import { failureIssue, fetchParts, partFailure, seasonOfSettlement } from "./odds.ts";
+import { failureIssue, fetchParts, otherSeason, partFailure, seasonOfSettlement } from "./odds.ts";
 import { expectShape } from "./run.ts";
 import { defineAdapter, type ParsedSource } from "./types.ts";
 
@@ -135,6 +135,10 @@ export const kalshi = defineAdapter({
 
   parse(data, ctx) {
     const out: ParsedSource = { season: null, observedAt: null, teams: {}, awards: {}, issues: data.failures.map(failureIssue) };
+    out.season = otherSeason(
+      Object.entries(data.series).flatMap(([t, ms]) => (SERIES[t] ? ms.map((m) => seasonOfSettlement(m.expected_expiration_time)) : [])),
+      ctx.season,
+    );
     for (const [ticker, markets] of Object.entries(data.series)) {
       const kind = SERIES[ticker];
       if (!kind) continue;

@@ -37,6 +37,20 @@ export function seasonOfSettlement(time: string | number | undefined): number | 
   return d.getUTCMonth() >= 5 ? d.getUTCFullYear() : d.getUTCFullYear() - 1;
 }
 
+/**
+ * For adapters that filter events by season themselves: when there were events with a known
+ * season but none for `season`, the provider is serving another season, and saying so gives
+ * `season-mismatch` instead of a misleading `market-missing` (QA-M0-9). Null otherwise.
+ */
+export function otherSeason(seasons: Iterable<number | null>, season: number): number | null {
+  let latest: number | null = null;
+  for (const s of seasons) {
+    if (s === season) return null;
+    if (s !== null && (latest === null || s > latest)) latest = s;
+  }
+  return latest;
+}
+
 /** A failed request among several, recorded in the payload so `parse` can report it. */
 export const partFailure = z.object({ part: z.string(), kind: z.enum(ISSUE_KINDS), message: z.string() });
 export type PartFailure = z.infer<typeof partFailure>;

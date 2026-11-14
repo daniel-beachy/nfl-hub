@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { AwardMarket } from "../../shared/ids.ts";
 import { teamFromName, type TeamId } from "../../shared/teams.ts";
-import { americanToProb, failureIssue, fetchParts, partFailure, seasonOfSettlement, teamFromAbbr } from "./odds.ts";
+import { americanToProb, failureIssue, fetchParts, otherSeason, partFailure, seasonOfSettlement, teamFromAbbr } from "./odds.ts";
 import { defineAdapter, type ParsedSource } from "./types.ts";
 
 // Bovada: an offshore sportsbook, and the flakiest source (missing in 2 of 10 weeks in 2026).
@@ -128,7 +128,9 @@ export const bovada = defineAdapter({
     const unknown = (name: string, where: string) =>
       out.issues.push({ kind: "unknown-name", message: `Unknown team "${name}" in "${where.trim()}"`, httpStatus: null });
 
-    for (const e of data.groups.flatMap((g) => g.events)) {
+    const events = data.groups.flatMap((g) => g.events);
+    out.season = otherSeason(events.map((e) => seasonOfSettlement(e.startTime)), ctx.season);
+    for (const e of events) {
       if (seasonOfSettlement(e.startTime) !== ctx.season) continue;
       for (const mk of e.displayGroups.flatMap((d) => d.markets)) {
         const kind = classifyMarket(e.description, mk.description);

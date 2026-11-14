@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { AwardMarket, TeamMetric } from "../../shared/ids.ts";
 import { teamFromName } from "../../shared/teams.ts";
 import { SourceError, type Http } from "../lib/http.ts";
+import { otherSeason } from "./odds.ts";
 import { expectShape } from "./run.ts";
 import { defineAdapter, type ParsedSource } from "./types.ts";
 
@@ -126,8 +127,12 @@ export const polymarket = defineAdapter({
   },
 
   parse(data, ctx) {
-    const out: ParsedSource = { season: null, observedAt: null, teams: {}, awards: {}, issues: [] };
-    const events = [...data.teamFutures, ...data.awards]
+    const all = [...data.teamFutures, ...data.awards];
+    const out: ParsedSource = {
+      season: otherSeason(all.filter((e) => classifyTitle(e.title)).map(seasonOf), ctx.season),
+      observedAt: null, teams: {}, awards: {}, issues: [],
+    };
+    const events = all
       .filter((e) => seasonOf(e) === ctx.season)
       // Highest volume first, so if two events claim one market the busier one wins.
       .sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0));

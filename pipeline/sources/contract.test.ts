@@ -35,14 +35,11 @@ describe.each(ADAPTERS.map((a) => [a.id, a] as const))("%s", (_id, adapter) => {
     expect(validatePayload(adapter, f.payload)).toEqual(f.payload);
   });
 
-  test("a payload from another season is refused or yields nothing", () => {
+  test("a payload from another season is refused as season-mismatch (QA-M0-9)", () => {
     const f = fixtures.at(-1)!;
-    const attempt = () => parsePayload(adapter, f.payload, { season: f.season + 1, date: f.date });
-    try {
-      expect(attempt().status).toBe("error");
-    } catch (err) {
-      expect(err).toMatchObject({ kind: "season-mismatch" });
-    }
+    expect(() => parsePayload(adapter, f.payload, { season: f.season + 1, date: f.date })).toThrow(
+      expect.objectContaining({ kind: "season-mismatch", message: expect.stringContaining(`season ${f.season}`) }),
+    );
   });
 
   test("garbage is schema drift, not a crash", () => {

@@ -70,7 +70,7 @@ One file per UTC day holding what every source said that day. Observations canno
 
 Applied identically to every source after its adapter has mapped provider values to our ids:
 
-1. **Season:** if the provider names a season and it is not the capture season, the whole block is an error (`season-mismatch`).
+1. **Season:** if the provider names a season and it is not the capture season, the whole block is an error (`season-mismatch`). Polymarket, Kalshi and Bovada name no season, so they read it from each event's settlement date; when there were events but none for the capture season, they report the latest season they saw, which gives the same error.
 2. **Range:** one probability outside 0 to 1, or wins outside 0 to 17, removes that whole metric or award market (`out-of-range`): a value out of range is a parse bug, such as a percent read as a fraction, so the values still in range are suspect too. A metric whose values are all zero is removed (`all-zero`).
 3. **Two-way markets:** where a sportsbook quotes both "yes" and "no" for making the playoffs, the pair is de-vigged: `yes / (yes + no)`.
 4. **Groups that must sum to 1:** Super Bowl (32 teams), `conference` and `seed1` (16 per conference), `division` (4 per division). For a complete group the raw sum goes into `raw` (`superBowlSum`, `conferenceSum.AFC`, `divisionSum.NFC West`). If it is outside 0.95 to 1.6 the group's values are removed (`bad-sum`): the data is wrong, not just vigged. Otherwise, for `market` sources only, values are divided by the sum. Forecasts and models are checked but not rescaled. An incomplete group stays raw, but if its teams already sum above 1.6 they are removed (`bad-sum`): a subset can never exceed the bound.
