@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
@@ -7,7 +7,7 @@ import { SourceError, type Http } from "../lib/http.ts";
 import { DATASETS } from "./datasets.ts";
 import { ensureAsset, type Asset } from "./download.ts";
 import { missingColumns } from "./read.ts";
-import { checkRows, parseSeasons, runStage } from "./stage.ts";
+import { checkRows, loadDataset, parseSeasons, runStage } from "./stage.ts";
 
 // The nflverse stage without the network. Reading real parquet is proved by the stage
 // itself in the Daily workflow (and by `npm run nflverse` locally).
@@ -72,6 +72,27 @@ describe("asset cache", () => {
     const { http } = fakeHttp({ bytes: new Uint8Array([1, 2]) });
     await expect(ensureAsset(http, dir, "schedules", asset())).rejects.toMatchObject({ kind: "network" });
     expect(existsSync(join(dir, "schedules/games.parquet"))).toBe(false);
+  });
+
+  test("a cached file whose size no longer matches its meta is downloaded again (QA-M0-10)", async () => {
+    const dir = tempDir();
+    const { http, calls } = fakeHttp();
+    const first = await ensureAsset(http, dir, "schedules", asset());
+    writeFileSync(first.path, new Uint8Array([1, 2])); // truncated on disk, meta untouched
+    const again = await ensureAsset(http, dir, "schedules", asset());
+    expect(again.downloaded).toBe(true);
+    expect([...readFileSync(again.path)]).toEqual([1, 2, 3, 4]);
+    expect(calls).toHaveLength(2);
+  });
+
+  test("a cached file that cannot be read is deleted with its meta, so the next run fetches it (QA-M0-10)", async () => {
+    const dir = tempDir();
+    const { http } = fakeHttp(); // four bytes that are not parquet
+    const games = DATASETS.games;
+    const assets = new Map([[games.file(0), asset()]]);
+    await expect(loadDataset(http, games, null, games.required, { cacheDir: dir, assets })).rejects.toThrow();
+    expect(existsSync(join(dir, "schedules/games.parquet"))).toBe(false);
+    expect(existsSync(join(dir, "schedules/games.parquet.json"))).toBe(false);
   });
 });
 

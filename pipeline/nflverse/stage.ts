@@ -4,7 +4,7 @@ import { NFLVERSE_MANIFEST_VERSION, nflverseManifestSchema, type NflverseFile, t
 import { isMain, parseArgs, REPO_ROOT, writeFileAtomic } from "../lib/files.ts";
 import { createHttp, toSourceError, type Http } from "../lib/http.ts";
 import { DATASET_IDS, DATASETS, type Dataset, type DatasetId } from "./datasets.ts";
-import { ensureAsset, listAssets, readCached, type Asset } from "./download.ts";
+import { ensureAsset, evictCached, listAssets, readCached, type Asset } from "./download.ts";
 import { DatasetError, readRows, type Row } from "./read.ts";
 
 // The nflverse stage (docs/PLAN.md 5.4): download what changed, load every file with its
@@ -36,7 +36,15 @@ export async function loadDataset(
   const asset = assets.get(name);
   if (!asset) throw new DatasetError(`${name} is not in the nflverse-data "${dataset.tag}" release`);
   const { path, meta } = await ensureAsset(http, opts.cacheDir ?? CACHE_DIR, dataset.tag, asset);
-  const rows = await readRows(readCached(path), columns, name);
+  let rows: Row[];
+  try {
+    rows = await readRows(readCached(path), columns, name);
+  } catch (err) {
+    // A file that cannot be parsed (not a missing column) is a bad cached copy: evict it so
+    // the next run downloads it again instead of failing on it until nflverse rebuilds it.
+    if (!(err instanceof DatasetError)) evictCached(path);
+    throw err;
+  }
   return { file: { dataset: dataset.id, season, name, updatedAt: meta.updatedAt, size: meta.size, rows: rows.length }, rows };
 }
 

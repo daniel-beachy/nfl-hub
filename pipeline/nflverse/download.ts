@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { readJsonIfExists, writeFileAtomic } from "../lib/files.ts";
@@ -56,7 +56,9 @@ export async function ensureAsset(http: Http, cacheDir: string, tag: string, ass
   const path = join(cacheDir, tag, asset.name);
   const metaPath = `${path}.json`;
   const cached = metaSchema.safeParse(readJsonIfExists(metaPath)).data;
-  if (cached && cached.updatedAt === asset.updated_at && cached.size === asset.size && existsSync(path)) {
+  // The file's own size is checked too: a truncated file under an intact meta would otherwise
+  // be trusted until nflverse publishes a new version (QA-M0-10).
+  if (cached && cached.updatedAt === asset.updated_at && cached.size === asset.size && sizeOf(path) === cached.size) {
     return { path, meta: cached, downloaded: false };
   }
   const bytes = await http.getBytes(asset.browser_download_url, { timeoutMs: 120_000, maxBytes: MAX_ASSET_BYTES });
@@ -67,6 +69,20 @@ export async function ensureAsset(http: Http, cacheDir: string, tag: string, ass
   const meta: CachedMeta = { name: asset.name, size: asset.size, updatedAt: asset.updated_at, downloadedAt: now.toISOString() };
   writeFileAtomic(metaPath, `${JSON.stringify(meta)}\n`);
   return { path, meta, downloaded: true };
+}
+
+const sizeOf = (path: string): number | null => {
+  try {
+    return statSync(path).size;
+  } catch {
+    return null;
+  }
+};
+
+/** Drop a cached file and its meta, so the next run downloads it again. */
+export function evictCached(path: string): void {
+  rmSync(path, { force: true });
+  rmSync(`${path}.json`, { force: true });
 }
 
 /** The bytes of a cached file as an ArrayBuffer (what hyparquet reads). */
