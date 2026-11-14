@@ -50,7 +50,8 @@ One file per UTC day holding what every source said that day. Observations canno
       "teams": { "KC": { "superBowl": 0.0935, "conference": 0.17, "division": 0.52, "playoffs": 0.89 } },
       "awards": { "mvp": [ { "playerId": null, "name": "Joe Burrow", "team": null, "prob": 0.3065 } ] },
       "coverage": { "superBowl": 32, "conference": 32, "division": 32, "playoffs": 32, "mvp": 25 },
-      "raw": { "superBowlSum": 1.0205, "divisionSum.AFC East": 1.003, "playoffsSum": 14.078 }
+      "raw": { "superBowlSum": 1.0205, "divisionSum.AFC East": 1.003, "playoffsSum": 14.078 },
+      "normalized": { "superBowl": true, "conference": true, "division": true, "playoffs": false }  // markets only; optional
     }
   }
 }
@@ -70,13 +71,14 @@ One file per UTC day holding what every source said that day. Observations canno
 Applied identically to every source after its adapter has mapped provider values to our ids:
 
 1. **Season:** if the provider names a season and it is not the capture season, the whole block is an error (`season-mismatch`).
-2. **Range:** a probability outside 0 to 1, or wins outside 0 to 17, is removed (`out-of-range`). A metric whose values are all zero is removed (`all-zero`).
+2. **Range:** one probability outside 0 to 1, or wins outside 0 to 17, removes that whole metric or award market (`out-of-range`): a value out of range is a parse bug, such as a percent read as a fraction, so the values still in range are suspect too. A metric whose values are all zero is removed (`all-zero`).
 3. **Two-way markets:** where a sportsbook quotes both "yes" and "no" for making the playoffs, the pair is de-vigged: `yes / (yes + no)`.
-4. **Groups that must sum to 1:** Super Bowl (32 teams), `conference` and `seed1` (16 per conference), `division` (4 per division). For a complete group the raw sum goes into `raw` (`superBowlSum`, `conferenceSum.AFC`, `divisionSum.NFC West`). If it is outside 0.95 to 1.6 the group's values are removed (`bad-sum`): the data is wrong, not just vigged. Otherwise, for `market` sources only, values are divided by the sum. Forecasts and models are checked but not rescaled. An incomplete group stays raw.
+4. **Groups that must sum to 1:** Super Bowl (32 teams), `conference` and `seed1` (16 per conference), `division` (4 per division). For a complete group the raw sum goes into `raw` (`superBowlSum`, `conferenceSum.AFC`, `divisionSum.NFC West`). If it is outside 0.95 to 1.6 the group's values are removed (`bad-sum`): the data is wrong, not just vigged. Otherwise, for `market` sources only, values are divided by the sum. Forecasts and models are checked but not rescaled. An incomplete group stays raw, but if its teams already sum above 1.6 they are removed (`bad-sum`): a subset can never exceed the bound.
 5. **Totals:** with all 32 teams present, `playoffs` must sum to 12 to 17 (14 teams qualify) and `wins` to 245 to 299 (272 games); otherwise the metric is removed (`bad-sum`).
-6. **Awards** are range-checked only and never normalized.
-7. **Coverage:** teams with a value per metric, candidates per award market. A metric the adapter `expects` with fewer than 32 teams adds `team-coverage` (or `market-missing` at zero); an expected award market with no candidates adds `market-missing`.
-8. **Status:** `ok` when there are no issues; `partial` when there are issues and some data; `error` when there is no usable data or the fetch or parse failed.
+6. **Awards** are range-checked and never normalized.
+7. **Normalized:** for `market` sources, `normalized[metric]` is `true` when every kept value of that probability metric was de-vigged (complete groups, or both sides of a two-way playoffs price) and `false` when any value is raw. Consensus must not mix raw and de-vigged values. Absent for `wins`, for forecasts and models (never rescaled), and in snapshots written before 2026-11-14; readers treat absent as unknown.
+8. **Coverage:** teams with a value per metric, candidates per award market. A metric the adapter `expects` with fewer than 32 teams adds `team-coverage` (or `market-missing` at zero); an expected award market with no candidates adds `market-missing`.
+9. **Status:** `ok` when there are no issues; `partial` when there are issues and some data; `error` when there is no usable data or the fetch or parse failed.
 
 ### 2.3 Issues
 

@@ -1310,5 +1310,12 @@
   "divisionSum.NFC North": 1.1124,
   "divisionSum.NFC South": 1.0871,
   "divisionSum.NFC West": 1.0844
+ },
+ "normalized": {
+  "superBowl": true,
+  "conference": true,
+  "division": true,
+  "playoffs": false,
+  "seed1": false
  }
 }

@@ -91,6 +91,12 @@ export const sourceBlockSchema = z
     coverage: z.partialRecord(coverageKey, z.number().int().min(0)),
     /** Pre-normalization sums per group, e.g. "superBowlSum", "divisionSum.AFC East". */
     raw: z.record(z.string(), z.number()),
+    /**
+     * Market sources only, per probability metric: true when every value was de-vigged, false
+     * when any value is raw (an incomplete group, a one-sided playoffs price). Added after the
+     * first snapshots (QA-M0-4), so absent in files written before 2026-11-14.
+     */
+    normalized: z.partialRecord(z.enum(TEAM_METRICS), z.boolean()).optional(),
   })
   .refine((b) => (b.status === "ok") === (b.error === null), {
     message: "error must be null exactly when status is ok",

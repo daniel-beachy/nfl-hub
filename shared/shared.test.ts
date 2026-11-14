@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import { contrast, MIN_CONTRAST, readableColor } from "./colors.ts";
 import { AWARD_MARKETS, CONFERENCES, DIVISION_IDS, seasonForDate, SOURCE_IDS, TEAM_METRICS } from "./ids.ts";
@@ -102,5 +103,15 @@ describe("snapshot schema", () => {
     expect(bad({ polymarket: { ...block, teams: { XXX: { superBowl: 0.1 } } } })).toBe(false);
     expect(bad({ polymarket: { ...block, error: { kind: "network", message: "x", httpStatus: null } } })).toBe(false);
     expect(bad({ polymarket: { ...block, status: "error" } })).toBe(false);
+  });
+  test("normalized is optional, so snapshots written before it existed still read (QA-M0-4)", () => {
+    const block = base.sources.polymarket!;
+    const withIt = { ...base, sources: { polymarket: { ...block, normalized: { superBowl: true, playoffs: false } } } };
+    expect(snapshotSchema.parse(withIt)).toEqual(withIt);
+    expect(snapshotSchema.safeParse({ ...base, sources: { polymarket: { ...block, normalized: { superBowl: "yes" } } } }).success).toBe(false);
+    for (const date of ["2026-11-13", "2026-11-14"]) {
+      const file = JSON.parse(readFileSync(new URL(`../data/snapshots/2026/${date}.json`, import.meta.url), "utf8")) as unknown;
+      expect(snapshotSchema.safeParse(file).error).toBeUndefined();
+    }
   });
 });

@@ -53,14 +53,54 @@ describe("finalize", () => {
     expect(b.status).toBe("error");
   });
 
-  test("out-of-range and all-zero values are removed and reported", () => {
+  test("one out-of-range value removes the whole metric; all-zero metrics are removed (QA-M0-4)", () => {
     const teams = fullTeams();
     teams.superBowl!.KC = 1.4;
     teams.playoffs = even(Object.keys(teams.playoffs!) as never, 0);
     const b = finalize(market, parsed({ teams }), ctx);
     expect(kinds(b)).toEqual(["out-of-range", "all-zero"]);
-    expect(b.teams.KC!.superBowl).toBeUndefined();
+    expect(b.coverage.superBowl).toBeUndefined();
+    expect(b.teams.BUF!.superBowl).toBeUndefined();
     expect(b.coverage.playoffs).toBeUndefined();
+    expect(b.coverage.division).toBe(32);
+  });
+
+  test("a percent read as a fraction removes the metric, even where some values stay at or below 1 (QA-M0-4)", () => {
+    const teams = fullTeams();
+    const sb = teams.superBowl!;
+    const ids = Object.keys(sb) as (keyof typeof sb)[];
+    ids.forEach((t, i) => (sb[t] = i < 16 ? 0.005 : 0.06)); // a sum of 1.04 ...
+    for (const t of ids) sb[t]! *= 100; // ... read as percent: 0.5 for half the teams, 6 for the rest
+    const b = finalize(market, parsed({ teams }), ctx);
+    expect(b.coverage.superBowl).toBeUndefined();
+    expect(b.issues.filter((i) => i.detail === "superBowl").map((i) => i.kind)).toEqual(["out-of-range"]);
+  });
+
+  test("an incomplete group that sums above 1.6 is removed too (QA-M0-4)", () => {
+    const teams = fullTeams();
+    delete teams.division!.KC;
+    for (const t of ["DEN", "LAC", "LV"] as const) teams.division![t] = 0.9;
+    const b = finalize(market, parsed({ teams }), ctx);
+    expect(kinds(b)).toContain("bad-sum");
+    expect(b.teams.DEN!.division).toBeUndefined();
+    expect(b.coverage.division).toBe(28);
+  });
+
+  test("each market metric records whether it was normalized (QA-M0-4)", () => {
+    const clean = finalize(market, parsed({ teams: fullTeams(0.08) }), ctx);
+    expect(clean.normalized).toEqual({ superBowl: true, conference: true, division: true, playoffs: false });
+    const teams = fullTeams(0.08);
+    delete teams.division!.KC;
+    const incomplete = finalize(market, parsed({ teams, playoffsNo: even(Object.keys(teams.playoffs!) as never, 18) }), ctx);
+    expect(incomplete.normalized).toMatchObject({ superBowl: true, division: false, playoffs: true });
+    expect(finalize(forecast, parsed({ teams: fullTeams(0.08) }), ctx).normalized).toBeUndefined();
+  });
+
+  test("an out-of-range award probability removes that award market (QA-M0-4)", () => {
+    const c = (name: string, prob: number) => ({ playerId: null, name, team: null, prob });
+    const b = finalize(market, parsed({ awards: { mvp: [c("A", 0.2), c("B", 30)] } }), ctx);
+    expect(b.awards.mvp).toBeUndefined();
+    expect(kinds(b)).toEqual(["out-of-range"]);
   });
 
   test("two-way playoff prices are de-vigged pairwise", () => {

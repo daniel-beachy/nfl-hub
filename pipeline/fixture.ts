@@ -10,6 +10,9 @@ import type { SourceAdapter } from "./sources/types.ts";
 
 // Fixtures: a real provider payload, trimmed to the fields the adapter reads, plus the
 // result it must parse to. `npm run fixture -- <source>` records today's.
+// `npm run fixture -- --reexpect <source>...` rewrites only the .expected.json files from the
+// stored payloads (no network), after a change to shared checks such as finalize.ts. Read
+// the diff: it must show only what that change meant to change.
 //   pipeline/sources/fixtures/<source>/<date>.json            the payload
 //   pipeline/sources/fixtures/<source>/<date>.expected.json   what parsing it must produce
 
@@ -54,8 +57,22 @@ export async function recordFixture(adapter: SourceAdapter, date: string): Promi
   return `${adapter.id} ${date}: ${expected.status} (${coverage})${expected.issues.map((i) => `\n  ${i.kind}: ${i.message}`).join("")}`;
 }
 
+/** Rewrite every stored fixture's expected result from its payload. No network. */
+export function reexpect(adapter: SourceAdapter): string[] {
+  return loadFixtures(adapter.id).map((f) => {
+    const expected = parsePayload(adapter, f.payload, { season: f.season, date: f.date });
+    writeFileAtomic(join(FIXTURE_DIR, adapter.id, `${f.date}.expected.json`), `${JSON.stringify(expected, null, 1)}\n`);
+    return `${adapter.id} ${f.date}: ${expected.status}`;
+  });
+}
+
 if (isMain(import.meta.url)) {
   const args = parseArgs(process.argv.slice(2));
+  if (args.reexpect) {
+    const ids = [...(typeof args.reexpect === "string" ? [args.reexpect] : []), ...args._];
+    for (const id of ids) console.log(reexpect(getAdapter(id)).join("\n"));
+    process.exit(0);
+  }
   if (args._.length === 0) throw new Error("Usage: npm run fixture -- <source> [<source>...]");
   const date = new Date().toISOString().slice(0, 10);
   for (const id of args._) console.log(await recordFixture(getAdapter(id), date));

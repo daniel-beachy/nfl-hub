@@ -49,9 +49,16 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
   for (const metric of TEAM_METRICS) {
     const values = new Map<TeamId, number>();
     const limit = metric === "wins" ? GAMES_PER_TEAM : 1;
+    const bad: string[] = [];
     for (const [team, value] of Object.entries(parsed.teams[metric] ?? {}) as [TeamId, number][]) {
       if (Number.isFinite(value) && value >= 0 && value <= limit) values.set(team, value);
-      else issues.push(issue("out-of-range", `${metric} for ${team} is ${value}`, metric));
+      else bad.push(`${team} ${value}`);
+    }
+    // A value out of range is a parse bug (a percent read as a fraction), not one bad team:
+    // the values still in range are suspect too, so the whole metric goes (QA-M0-4).
+    if (bad.length > 0) {
+      issues.push(issue("out-of-range", `${metric} has ${bad.length} value(s) outside 0 to ${limit} (${bad.slice(0, 5).join(", ")}); metric removed`, metric));
+      continue;
     }
     if (values.size === 0) continue;
     if ([...values.values()].every((v) => v === 0)) {
@@ -61,12 +68,19 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
     metrics.set(metric, values);
   }
 
+  // Which values are still raw (not de-vigged), per metric, for `normalized` below.
+  const rawValues = new Map<TeamMetric, Set<TeamId>>();
+  for (const [metric, values] of metrics) rawValues.set(metric, new Set(values.keys()));
+
   // Two-way markets: remove the vig pairwise where the book quotes both sides.
   const playoffs = metrics.get("playoffs");
   if (playoffs && parsed.playoffsNo) {
     for (const [team, yes] of playoffs) {
       const no = parsed.playoffsNo[team];
-      if (no !== undefined && Number.isFinite(no) && no >= 0 && yes + no > 0) playoffs.set(team, yes / (yes + no));
+      if (no !== undefined && Number.isFinite(no) && no >= 0 && yes + no > 0) {
+        playoffs.set(team, yes / (yes + no));
+        rawValues.get("playoffs")!.delete(team);
+      }
     }
   }
 
@@ -74,15 +88,27 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
     const values = metrics.get(metric);
     if (!values) continue;
     for (const group of groups) {
-      if (!group.members.every((t) => values.has(t))) continue; // incomplete groups stay raw
-      const sum = group.members.reduce((s, t) => s + values.get(t)!, 0);
-      const label = group.name ? `${metric}Sum.${group.name}` : `${metric}Sum`;
-      raw[label] = round(sum, 4);
+      const present = group.members.filter((t) => values.has(t));
+      if (present.length === 0) continue;
+      const sum = present.reduce((s, t) => s + values.get(t)!, 0);
+      const name = `${metric} ${group.name}`.trim();
+      if (present.length < group.members.length) {
+        // Incomplete groups stay raw, but a subset can never sum above the upper bound (QA-M0-4).
+        if (sum > GROUP_SUM_RANGE[1]) {
+          issues.push(issue("bad-sum", `${name} sums to ${round(sum, 3)} with only ${present.length} of ${group.members.length} teams`, metric));
+          for (const t of present) values.delete(t);
+        }
+        continue;
+      }
+      raw[group.name ? `${metric}Sum.${group.name}` : `${metric}Sum`] = round(sum, 4);
       if (!inRange(sum, GROUP_SUM_RANGE)) {
-        issues.push(issue("bad-sum", `${metric} ${group.name} sums to ${round(sum, 3)}, expected about 1`.replace("  ", " "), metric));
+        issues.push(issue("bad-sum", `${name} sums to ${round(sum, 3)}, expected about 1`, metric));
         for (const t of group.members) values.delete(t);
       } else if (adapter.kind === "market") {
-        for (const t of group.members) values.set(t, values.get(t)! / sum);
+        for (const t of group.members) {
+          values.set(t, values.get(t)! / sum);
+          rawValues.get(metric)!.delete(t);
+        }
       }
     }
   }
@@ -102,9 +128,14 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
 
   const teams: Partial<Record<TeamId, TeamValues>> = {};
   const coverage: SourceBlock["coverage"] = {};
+  const normalized: NonNullable<SourceBlock["normalized"]> = {};
   for (const [metric, values] of metrics) {
     if (values.size === 0) continue;
     coverage[metric] = values.size;
+    // Markets only: true when every kept value was de-vigged, false when any is raw.
+    if (adapter.kind === "market" && metric !== "wins") {
+      normalized[metric] = ![...values.keys()].some((t) => rawValues.get(metric)!.has(t));
+    }
     for (const team of ALL_TEAMS) {
       const v = values.get(team);
       if (v !== undefined) (teams[team] ??= {})[metric] = round(v, metric === "wins" ? 2 : 4);
@@ -114,9 +145,14 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
   const awards: SourceBlock["awards"] = {};
   for (const market of AWARD_MARKETS) {
     const kept: AwardCandidate[] = [];
+    const bad: string[] = [];
     for (const c of parsed.awards[market] ?? []) {
       if (Number.isFinite(c.prob) && c.prob >= 0 && c.prob <= 1) kept.push({ ...c, prob: round(c.prob, 4) });
-      else issues.push(issue("out-of-range", `${market} probability for ${c.name} is ${c.prob}`, market));
+      else bad.push(`${c.name} ${c.prob}`);
+    }
+    if (bad.length > 0) {
+      issues.push(issue("out-of-range", `${market} has ${bad.length} probability(ies) outside 0 to 1 (${bad.slice(0, 5).join(", ")}); market removed`, market));
+      continue;
     }
     if (kept.length === 0) continue;
     kept.sort((a, b) => b.prob - a.prob || a.name.localeCompare(b.name));
@@ -142,5 +178,8 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
   const hasData = Object.keys(coverage).length > 0;
   const status = !hasData ? "error" : issues.length > 0 ? "partial" : "ok";
   const error = status === "ok" ? null : (issues[0] ?? issue("market-missing", "The source returned no usable values"));
-  return { status, observedAt: parsed.observedAt, error, issues, teams, awards, coverage, raw };
+  return {
+    status, observedAt: parsed.observedAt, error, issues, teams, awards, coverage, raw,
+    ...(Object.keys(normalized).length > 0 && { normalized }),
+  };
 }
