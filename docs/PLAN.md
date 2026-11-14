@@ -142,7 +142,7 @@ Full schemas go in `shared/` as zod and are documented in `docs/DATA-CONTRACT.md
 ### 6.1 Identifiers
 
 - Teams: nflverse abbreviations (`KC`, `SF`, `LA`, `WAS`...) as the canonical id. `shared/teams.ts` maps ESPN ids, ESPN abbreviations, Kalshi and Polymarket naming, and Bovada names to it, and holds conference, division and colors (primary, alternate, and a computed readable-on-dark and readable-on-light color).
-- Players: nflverse `gsis_id` canonical, with `espn_id` from the nflverse `players` file for joining ESPN and market data. Market candidates that cannot be matched keep their display name and a null id.
+- Players: nflverse `gsis_id` canonical, with `espn_id` from the nflverse `players` file for joining ESPN and market data. Market candidates that cannot be matched keep their display name and a null id. Not built yet (QA-M0-12): every snapshot candidate has `playerId: null` until matching is added, at the latest before the M1 award charts need it.
 - Team metrics: `superBowl`, `conference` (win conference), `division`, `playoffs`, `wins` (projected or market win total), `seed1`.
 - Award markets: `mvp`, `opoy`, `dpoy`, `oroy`, `droy`, `coy`, `cpoy`.
 - Source ids: `hub`, `espn-fpi`, `draftkings`, `polymarket`, `kalshi`, `bovada`. Plus a computed `consensus`.

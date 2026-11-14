@@ -25,7 +25,7 @@ The shapes the pipeline writes and the app reads. The zod schemas in `shared/` a
 
   `teamFromName` ignores case and punctuation and returns `undefined` for anything ambiguous (`Los Angeles`, `New York`) or unknown. Adapters record an `unknown-name` issue then; they never guess.
 - **Team colors:** ESPN's primary and alternate. Never draw with them directly: `readableColor(color, altColor, background)` in `shared/colors.ts` returns a version with at least 3:1 contrast on that background.
-- **Players:** nflverse `gsis_id`. Award candidates carry `playerId: null` until the nflverse `players` file is wired in (M0-8), then are matched by name; unmatched candidates keep `null`.
+- **Players:** nflverse `gsis_id`. **Matching is not built yet:** every award candidate has `playerId: null` (all 606 on 2026-11-13), although M0-8 loads the nflverse `players` file. When matching is built (by `espn_id` for DraftKings, by name elsewhere), unmatched candidates keep `null`. Kalshi and Polymarket candidates also always have `team: null`.
 - **Team metrics:** `superBowl` (win it), `conference` (win the conference, i.e. reach the Super Bowl), `division`, `playoffs`, `seed1` are probabilities from 0 to 1. `wins` is a number of regular-season wins (projected, or a market win total).
 - **Award markets:** `mvp`, `opoy`, `dpoy`, `oroy`, `droy`, `coy`, `cpoy`.
 - **Sources:** `hub`, `espn-fpi`, `draftkings`, `polymarket`, `kalshi`, `bovada`. Compiled series add a computed `consensus`. Each source has a `kind` (`model`, `forecast`, `market`) and a `tier` (`core`, `standard`, `bonus`).
