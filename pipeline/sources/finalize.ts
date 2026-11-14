@@ -155,6 +155,12 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
       continue;
     }
     if (kept.length === 0) continue;
+    // The same rule as team metrics, per award market (QA-M0-5). A settled market has one
+    // candidate at 1 and the rest at 0, which is not all zero and stays.
+    if (kept.every((c) => c.prob === 0)) {
+      issues.push(issue("all-zero", `Every ${market} candidate is at zero (${kept.length})`, market));
+      continue;
+    }
     kept.sort((a, b) => b.prob - a.prob || a.name.localeCompare(b.name));
     awards[market] = kept.slice(0, AWARD_CANDIDATE_CAP);
     coverage[market] = awards[market].length;

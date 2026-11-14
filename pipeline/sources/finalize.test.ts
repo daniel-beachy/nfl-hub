@@ -96,6 +96,17 @@ describe("finalize", () => {
     expect(finalize(forecast, parsed({ teams: fullTeams(0.08) }), ctx).normalized).toBeUndefined();
   });
 
+  test("an award market whose candidates are all zero is removed; a settled one with a winner stays (QA-M0-5)", () => {
+    const c = (name: string, prob: number) => ({ playerId: null, name, team: null, prob });
+    const withAwards = fakeAdapter({ expects: { teams: ["superBowl"], awards: ["mvp", "coy"] } });
+    const b = finalize(withAwards, parsed({ awards: { mvp: [c("A", 0), c("B", 0)], coy: [c("C", 1), c("D", 0)] } }), ctx);
+    expect(b.awards.mvp).toBeUndefined();
+    expect(b.coverage.mvp).toBeUndefined();
+    expect(b.issues.map((i) => [i.kind, i.detail])).toEqual([["all-zero", "mvp"]]);
+    expect(b.status).toBe("partial");
+    expect(b.awards.coy).toEqual([c("C", 1), c("D", 0)]);
+  });
+
   test("an out-of-range award probability removes that award market (QA-M0-4)", () => {
     const c = (name: string, prob: number) => ({ playerId: null, name, team: null, prob });
     const b = finalize(market, parsed({ awards: { mvp: [c("A", 0.2), c("B", 30)] } }), ctx);
