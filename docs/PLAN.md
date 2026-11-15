@@ -271,7 +271,7 @@ Purpose: a source that is always available, covers every metric, and gives real 
 - **Simulation:** Monte Carlo over all remaining games (20,000 seasons, seeded and reproducible), ratings updated within each simulated season, then the playoff bracket simulated with reseeding and home field.
 - **Tiebreakers:** implement the NFL division and wild-card procedures in order through head-to-head, division record, common games, conference record, strength of victory and strength of schedule; break anything deeper randomly. This is the hard part. Test against the real final seeds of 2020 to 2025 (all six seasons must reproduce exactly when fed final results).
 - **Output per team:** `playoffs`, `division`, `seed1`, `conference`, `superBowl`, `wins` (mean) and the win distribution; per upcoming game: home win probability (used on the Live slate before kickoff).
-- **Backfill:** walk forward through 2020 to 2025 producing one forecast per week using only games played before that point. Label it in the UI as "computed afterwards from results known at the time". Also backfill 2026 weeks 1 to present, then run daily.
+- **Backfill:** walk forward through 2020 to 2025 producing one forecast per week using only games played before that point. Label it in the UI as "computed afterwards from results known at the time". Also backfill 2026 weeks 1 to present, then run daily. Built in M1-2 as one point after every game day (the forecast only changes when a game is played, so the latest point is exactly the forecast for any later date); the weekly view uses the points flagged `weekComplete`. `docs/DATA-CONTRACT.md` section 6.
 - Runs in the pipeline in well under a minute. Pure functions, no I/O inside the model.
 
 ### 8.4 Carrying over 2026 history [O]
@@ -397,7 +397,7 @@ Checkpoint: Dan sees a bare status page listing every source green, and three da
 | # | Task | Who | Done when |
 |---|---|---|---|
 | M1-1 ✅ | Hub model: ratings, simulation, tiebreakers, `docs/MODEL.md` | F | 2020 to 2025 final seeds reproduce; evaluation numbers recorded (2026-11-13: seeds reproduce; held-out Brier 0.2225 against the spread's 0.2094, so the 0.01 target in 8.3 was missed by 0.003) |
-| M1-2 | Model backfill 2020 to 2026 and daily run | O | Weekly forecasts exist for every completed week |
+| M1-2 ✅ | Model backfill 2020 to 2026 and daily run | O | Weekly forecasts exist for every completed week (2026-11-15: a point after every game day, not only weekly, so the daily hub line is exact; 2020 to 2025 have 21 or 22 completed weeks each, 2026 has 9; full backfill about 4 minutes, a normal daily run recomputes only the current season) |
 | M1-3 | Import v3 2026 snapshots | O | Ten dates present; spot-check three values per source against v3's live site |
 | M1-4 | `compile.ts`: series, weekly, consensus | O | Unit tests for alignment, gaps and consensus |
 | M1-5 | Design system: tokens, themes, layout shell, navigation, favorite team | F | Looks right at 360, 768, 1280 in both themes |

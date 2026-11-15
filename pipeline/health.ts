@@ -1,6 +1,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { seasonForDate, type SourceTier } from "../shared/ids.ts";
+import { modelSeasonSchema, type ModelSeason } from "../shared/model.ts";
 import { nflverseManifestSchema, type NflverseManifest } from "../shared/nflverse.ts";
 import { snapshotSchema, type Snapshot } from "../shared/snapshot.ts";
 import { STATUS_SCHEMA_VERSION, statusSchema, type SourceHealth, type StageHealth, type Status } from "../shared/status.ts";
@@ -55,6 +56,8 @@ export interface StatusInput {
   runUrl?: string | null;
   /** The nflverse stage's last good manifest, from the derived branch. */
   nflverse?: NflverseManifest;
+  /** The model stage's file for the current season, from the derived branch. */
+  model?: ModelSeason;
 }
 
 /** Days without a rebuild before the current play-by-play counts as stale, in season. */
@@ -73,7 +76,7 @@ function newestPbp(m: NflverseManifest | undefined) {
 
 /** Pure. Issue numbers are filled in afterwards by `syncIssues`. */
 export function computeStatus(input: StatusInput): Status {
-  const { adapters, snapshots, today, now, jobs = {}, previous, nflverse } = input;
+  const { adapters, snapshots, today, now, jobs = {}, previous, nflverse, model } = input;
   const latest = snapshots.at(-1);
   const generatedAt = now.toISOString();
 
@@ -125,6 +128,11 @@ export function computeStatus(input: StatusInput): Status {
         detail = `pbp ${pbp.season} not rebuilt for ${Math.floor(ageDays)} days (updated ${pbp.updatedAt}); nflverse may have stopped`;
       }
     }
+    if (id === "model" && ok && model) {
+      const latest = model.points.at(-1)!;
+      const weeks = model.points.filter((p) => p.weekComplete && p.week > 0).length;
+      detail = `${model.season}: latest forecast as of ${latest.date} (week ${latest.week}), ${weeks} completed weeks; games updated ${model.gamesUpdatedAt}`;
+    }
     const status = !ok ? "error" : stale ? "stale" : "ok";
     return { id, status, lastOk: status === "ok" ? generatedAt : (before?.lastOk ?? null), detail, issue: null };
   });
@@ -142,6 +150,7 @@ export function computeStatus(input: StatusInput): Status {
     dataFreshness: {
       snapshots: latest?.date ?? null,
       ...(nflverse && { pbp: newestPbp(nflverse)?.updatedAt.slice(0, 10) ?? null }),
+      ...(model && { model: model.points.at(-1)!.date }),
     },
     runUrl: input.runUrl ?? null,
   };
@@ -302,7 +311,8 @@ export async function runHealth(o: HealthRun): Promise<Status> {
   );
   const previous = statusSchema.safeParse(readJsonIfExists(out)).data;
   const nflverse = nflverseManifestSchema.safeParse(readJsonIfExists(join(out, "..", "nflverse/manifest.json"))).data;
-  const status = computeStatus({ adapters: ADAPTERS, snapshots, today, now, jobs, previous, runUrl: runUrlFrom(env), nflverse });
+  const model = modelSeasonSchema.safeParse(readJsonIfExists(join(out, "..", `model/${seasonForDate(today)}.json`))).data;
+  const status = computeStatus({ adapters: ADAPTERS, snapshots, today, now, jobs, previous, runUrl: runUrlFrom(env), nflverse, model });
 
   const client = o.issues ?? (env.GITHUB_TOKEN && env.GITHUB_REPOSITORY ? githubIssues(env.GITHUB_REPOSITORY, env.GITHUB_TOKEN) : undefined);
   if (o.noIssues || !client) {

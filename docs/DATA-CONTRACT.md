@@ -7,6 +7,7 @@ The shapes the pipeline writes and the app reads. The zod schemas in `shared/` a
 | `data/snapshots/{season}/{date}.json` | `shared/snapshot.ts` | `pipeline/capture.ts` | `main`, committed, append-only |
 | `data/season/{season}/series.json`, `weekly.json` | `shared/series.ts` | `pipeline/compile.ts` (M1-4) | `derived` branch |
 | `data/status.json` | `shared/status.ts` | `pipeline/health.ts` | `derived` branch |
+| `data/model/{season}.json` | `shared/model.ts` | `pipeline/model/stage.ts` (M1-2) | `derived` branch |
 
 ## 1. Identifiers (`shared/ids.ts`, `shared/teams.ts`)
 
@@ -166,3 +167,37 @@ The `nflverse` stage's `detail` names the newest play-by-play file and when nflv
 ```
 
 Checks before the manifest is written: every column in the dataset's `required` list (`pipeline/nflverse/datasets.ts`) exists; the file has rows; a per-season file has no other season's rows; `games` reaches at least last season; `players` has at least 5,000 rows and 1,000 ESPN ids.
+
+## 6. Hub model forecasts
+
+`shared/model.ts`, written by `pipeline/model/stage.ts` to `derived/model/{season}.json` (served at `data/model/{season}.json`), one file per season from 2020 to the current one. How the model works is in `docs/MODEL.md`.
+
+```jsonc
+{
+  "schemaVersion": 1, "season": 2026, "generatedAt": "...",
+  "sims": 20000, "params": { "k": 22, "hfa": 52, "regress": 0.45 },
+  "inputHash": "3f9c0a...",                  // games of this and earlier seasons + params + sims
+  "gamesUpdatedAt": "2026-11-15T07:01:12Z",  // the nflverse games file used
+  "points": [                                // oldest first
+    { "date": "2026-09-09", "week": 0, "phase": "preseason", "weekComplete": true, "gamesPlayed": 0, "gamesLeft": 272,
+      "teams": { "KC": { "rating": 1561.2, "playoffs": 0.6312, "division": 0.4021, "seed1": 0.1104,
+                         "conference": 0.1532, "superBowl": 0.0811, "wins": 10.12 } } },
+    { "date": "2026-09-11", "week": 1, "phase": "regular", "weekComplete": false, "gamesPlayed": 1, "gamesLeft": 271, "teams": { } }
+  ],
+  "current": {                               // null once the season is over
+    "date": "2026-11-13",                    // the latest point
+    "winDist": { "KC": [0, 0, 0.0001, ...] },  // chance of exactly 0 to 17 wins
+    "games": [ { "id": "2026_11_NYJ_NE", "week": 11, "date": "2026-11-15", "home": "NE", "away": "NYJ", "homeWinProb": 0.6123 } ]
+  }
+}
+```
+
+Rules:
+
+- **Only results known at the time.** A point dated `D` is `forecast(asOf(games, D))`: games before `D` count with their results, later results are blanked and later playoff games dropped. `asOf` is the only way games are limited. Past seasons are therefore "computed afterwards from results known at the time", with parameters tuned on 2010 to 2019.
+- **Points:** the preseason point (week 0), dated the season's first game day, then one point per game day once every game that day is final, dated the next day so it lines up with the snapshot captured that morning. A game day still being played gets no point yet. A game that was never played does not hold back later points (it counts as settled once a later game is final).
+- **Between points the forecast does not change** (no game was played), so the forecast for any date is the latest point on or before it, and the preseason point also stands for every earlier date of its season. `compile.ts` relies on this; it is exact, not interpolation.
+- **Weekly view:** points with `weekComplete: true` are the day after the last game of `week`. `week` follows nflverse numbering: regular weeks 1 to 18 (17 in 2020), then the postseason rounds.
+- Every point has all 32 teams. Probabilities rounded to 4 decimals, wins to 2, ratings to 1.
+- The file for a season is recomputed only when its `inputHash` changes (a new result, a schedule change, new parameters or simulation count, or `MODEL_VERSION` in `stage.ts`); otherwise the previous file is kept as is.
+- The stage writes nothing unless every season succeeds. A season with no schedule yet (the new season, before the schedule is released in spring) is skipped without error; a past season with no schedule fails the stage.

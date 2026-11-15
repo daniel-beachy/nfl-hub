@@ -10,6 +10,7 @@ TypeScript run with `tsx`. The design is in `docs/PLAN.md` sections 5 to 7; the 
 | `npm run fixture -- kalshi` | Record today's real payload and expected result as a test fixture |
 | `npm run nflverse` | Download changed nflverse files into `cache/nflverse/`, check them, write `derived/nflverse/manifest.json` |
 | `npm run nflverse -- --seasons 2020-2026 --datasets pbp --dry-run` | Same for some seasons or datasets; `--dry-run` writes no manifest |
+| `npm run model` | Hub forecasts after every game day since 2020 into `derived/model/{season}.json`; unchanged seasons keep their file |
 | `npm run health -- --no-issues` | Write `derived/status.json` without touching GitHub issues |
 | `npm run check` | Typecheck, lint, tests, build. Run before every commit |
 

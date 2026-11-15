@@ -2,7 +2,9 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test, vi } from "vitest";
+import type { ModelSeason } from "../shared/model.ts";
 import type { Snapshot, SourceBlock } from "../shared/snapshot.ts";
+import { TEAM_IDS } from "../shared/teams.ts";
 import { statusSchema } from "../shared/status.ts";
 import { computeStatus, healthMain, syncIssues, SOURCE_LABEL } from "./health.ts";
 import type { IssueClient, IssueRef } from "./lib/github.ts";
@@ -202,5 +204,40 @@ describe("health crashing (QA-M0-8)", () => {
     expect(await healthMain({ root, out, now, noIssues: true, env: {} })).toBe(0);
     expect(read().stages.map((s) => s.id)).toEqual(["capture"]);
     vi.restoreAllMocks();
+  });
+});
+
+describe("model stage in status.json", () => {
+  const teams = Object.fromEntries(
+    TEAM_IDS.map((t) => [t, { rating: 1500, playoffs: 0.4, division: 0.25, seed1: 0.06, conference: 0.06, superBowl: 0.03, wins: 8.5 }]),
+  ) as ModelSeason["points"][number]["teams"];
+  const point = (date: string, week: number, weekComplete: boolean) => ({
+    date, week, phase: "regular" as const, weekComplete, gamesPlayed: 10 * week, gamesLeft: 272 - 10 * week, teams,
+  });
+  const model: ModelSeason = {
+    schemaVersion: 1, season: 2026, generatedAt: "2026-11-15T09:00:00.000Z", sims: 20000, params: { k: 22, hfa: 52, regress: 0.45 },
+    inputHash: "x", gamesUpdatedAt: "2026-11-15T07:00:00Z",
+    points: [{ ...point("2026-09-09", 0, true), phase: "preseason" }, point("2026-11-11", 10, true), point("2026-11-14", 11, false)],
+    current: null,
+  };
+
+  test("reports the latest forecast date in the stage detail and dataFreshness", () => {
+    const status = computeStatus({
+      adapters, snapshots: [snap(15, { "espn-fpi": ok, polymarket: ok, bovada: ok })], today: day(15), now: new Date(`${day(15)}T09:00:00Z`),
+      jobs: { capture: "success", model: "success" }, model,
+    });
+    const stage = status.stages.find((s) => s.id === "model")!;
+    expect(stage.status).toBe("ok");
+    expect(stage.detail).toContain("as of 2026-11-14 (week 11), 1 completed weeks");
+    expect(status.dataFreshness.model).toBe("2026-11-14");
+  });
+
+  test("a failed model job is an error whatever the last file says", () => {
+    const status = computeStatus({
+      adapters, snapshots: [snap(15, { "espn-fpi": ok, polymarket: ok, bovada: ok })], today: day(15), now: new Date(`${day(15)}T09:00:00Z`),
+      jobs: { capture: "success", model: "failure" }, model,
+    });
+    expect(status.stages.find((s) => s.id === "model")!.status).toBe("error");
+    expect(status.overall).toBe("down");
   });
 });

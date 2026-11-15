@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       fail_job:
-        description: "Testing only: force this job to fail (capture, nflverse or health)"
+        description: "Testing only: force this job to fail (capture, nflverse, model or health)"
         required: false
         default: ""
 
@@ -109,11 +109,42 @@ jobs:
           key: nflverse-${{ hashFiles('cache/nflverse/**/*.parquet.json') }}
       - run: scripts/derived.sh push derived
 
-  # Later stages (model, compile) go here, each with `needs` on the one before and
-  # `if: always()`, each fetching and pushing the derived branch around its own files.
+  # The hub model (pipeline/model/stage.ts): a forecast after every game day since 2020,
+  # written to derived/model/{season}.json. Seasons whose games did not change keep their
+  # previous file, so a normal run recomputes only the current season (about a minute). The
+  # first run after a model change recomputes everything (several minutes). On failure
+  # nothing is pushed and the previous files stay.
+  model:
+    needs: [nflverse]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: scripts/derived.sh fetch derived
+      - uses: actions/cache/restore@v6
+        with:
+          path: cache/nflverse
+          key: nflverse-${{ github.run_id }}
+          restore-keys: nflverse-
+      - name: Forced failure (testing)
+        if: inputs.fail_job == 'model'
+        run: exit 1
+      - run: npm run model
+      - run: scripts/derived.sh push derived
+
+  # Later stages (compile) go here, each with `needs` on the one before and `if: always()`,
+  # each fetching and pushing the derived branch around its own files.
 
   health:
-    needs: [capture, nflverse]
+    needs: [capture, nflverse, model]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -142,7 +173,7 @@ jobs:
         run: scripts/derived.sh push derived
 
   deploy:
-    needs: [capture, nflverse, health]
+    needs: [capture, nflverse, model, health]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10

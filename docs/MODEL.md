@@ -13,14 +13,14 @@ Everything in M1-1 is built, tested and on `main`. All of it is pure TypeScript 
 | Tiebreakers and seeding | `standings.ts` | Done; the real 2020 to 2025 seeds all reproduce with no coin flip |
 | Simulation and forecast | `forecast.ts` | Done; 20,000 seasons in about 0.6 s |
 
-Left for M1-2 (Opus), none of it started:
+M1-2 (2026-11-15) added the `model` stage: `pipeline/model/stage.ts`, `npm run model`, the `model` job in `daily.yml`, `shared/model.ts`, and `docs/DATA-CONTRACT.md` section 6. It writes a point after every game day of every season since 2020 (not only one per week: that makes the daily hub line exact, since the forecast only changes when a game is played), and keeps a season's previous file while its inputs are unchanged. What it was asked to do:
 
 1. A `model` stage (`pipeline/model/stage.ts` and a `model` job in `daily.yml`, per `pipeline/README.md` "Derived data and later stages"): `loadDataset(http, DATASETS.games, ...)` with `GAME_COLUMNS`, then `toModelGames`, then `forecast(games, season)`, written under `derived/`.
 2. A zod schema in `shared/` and a section in `docs/DATA-CONTRACT.md` for the output file. The `Forecast` type in `forecast.ts` is the shape to start from.
 3. Backfill: for each season 2020 to 2026 and each week, `forecast(asOf(games, date), season)`, where `date` is the day after the week's last game (and one preseason point). `asOf` is what guarantees "only results known at the time"; do not filter games any other way. About 150 forecasts, under two minutes in total.
 4. Nothing new is needed from nflverse: every column in `GAME_COLUMNS` is already in the `games` dataset's `required` list.
 
-Try it: `npx tsx pipeline/model/cli.ts forecast 2026` (add `--as-of 2026-10-01` for a past date).
+Try it: `npx tsx pipeline/model/cli.ts forecast 2026` (add `--as-of 2026-10-01` for a past date). The stage: `npm run model -- --sims 2000 --out tmp/derived` for a quick local run.
 
 ## Ratings
 
