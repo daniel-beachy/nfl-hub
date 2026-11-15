@@ -77,8 +77,14 @@ export function TimeSeriesChart({ label, dates, weeks, lines, range, format, iso
     return scaleLinear().domain([lo, hi]).nice(4).range([innerH, 0]);
   }, [lines, isolated, isolating, i0, i1, zeroBased, innerH]);
 
-  const span = Math.max(1, i1 - i0);
-  const x = (i: number) => (i1 === i0 ? innerW / 2 : ((i - i0) / span) * innerW);
+  // Weekly points are evenly spaced. Daily points sit at their real dates, because the
+  // axis can mix weekly and daily captures and two days must not look like two weeks.
+  const xs = useMemo(() => {
+    const t = dates.map((d, i) => (weeks ? i : Date.parse(d)));
+    const [t0, t1] = [t[i0] ?? 0, t[i1] ?? 0];
+    return t.map((ti) => (t1 === t0 ? innerW / 2 : ((ti - t0) / (t1 - t0)) * innerW));
+  }, [dates, weeks, i0, i1, innerW]);
+  const x = (i: number) => xs[i] ?? 0;
   const path = (pts: readonly (readonly [number, number])[]) => pts.map(([i, v], k) => `${k ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join("");
 
   // Draw order: dimmed lines, then normal, then isolated, then the favorite on top.
@@ -95,15 +101,27 @@ export function TimeSeriesChart({ label, dates, weeks, lines, range, format, iso
   const labelled = isolating || lines.length <= 6 ? ends : ends.filter((e, k) => k < 5 || e.line.id === emphasized);
   const labelYs = spreadLabels(labelled.map((e) => y(e.last[1])), 12, 4, innerH);
 
+  // Ticks from the latest point backwards, skipping any that would crowd the previous one.
   const xTicks = useMemo(() => {
-    const count = Math.min(span + 1, innerW < 420 ? 4 : 7);
-    return Array.from(new Set(Array.from({ length: count }, (_, k) => Math.round(i0 + (count === 1 ? 0 : (k / (count - 1)) * span)))));
-  }, [i0, span, innerW]);
+    const minGap = weeks ? 44 : 58;
+    const ticks: number[] = [];
+    let prev = Infinity;
+    for (let i = i1; i >= i0; i--) {
+      const xi = xs[i] ?? 0;
+      if (prev - xi >= minGap) {
+        ticks.push(i);
+        prev = xi;
+      }
+    }
+    return ticks;
+  }, [i0, i1, xs, weeks]);
 
   const onPointer = (e: PointerEvent<SVGRectElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
-    const frac = box.width ? (e.clientX - box.left) / box.width : 0;
-    onHover(Math.min(i1, Math.max(i0, Math.round(i0 + frac * span))));
+    const px = e.clientX - box.left;
+    let best = i0;
+    for (let i = i0; i <= i1; i++) if (Math.abs((xs[i] ?? 0) - px) < Math.abs((xs[best] ?? 0) - px)) best = i;
+    onHover(best);
   };
 
   const hover = hoverIndex !== null && hoverIndex >= i0 && hoverIndex <= i1 ? hoverIndex : null;

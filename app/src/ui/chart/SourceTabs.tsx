@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import type { SeriesSourceId } from "../../../../shared/ids.ts";
 import { SOURCE_INFO } from "./model.ts";
 import css from "./SourceTabs.module.css";
@@ -19,11 +19,19 @@ const shortDate = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateStri
 
 export function SourceTabs({ tabs, value, onChange, label }: { tabs: readonly SourceTab[]; value: SeriesSourceId; onChange: (id: SeriesSourceId) => void; label: string }) {
   const infoId = useId();
+  // On a narrow phone the row scrolls sideways; keep the chosen tab in view (it may be a
+  // remembered one that starts off screen).
+  const row = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = row.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+    const box = row.current;
+    if (el && box) box.scrollLeft = Math.max(0, el.offsetLeft - box.offsetLeft - (box.clientWidth - el.offsetWidth) / 2);
+  }, [value]);
   const current = tabs.find((t) => t.id === value);
   const info = SOURCE_INFO[value];
   return (
     <div className={css.wrap}>
-      <div className={css.tabs} role="tablist" aria-label={`Source for ${label}`}>
+      <div ref={row} className={css.tabs} role="tablist" aria-label={`Source for ${label}`}>
         {tabs.map((t) => (
           <button
             key={t.id}

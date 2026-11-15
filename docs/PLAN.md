@@ -262,6 +262,16 @@ Built in M0-3 (`pipeline/sources/types.ts`); the checks are specified in `docs/D
 - A "compare sources" toggle on any chart, with one team selected, draws one line per source for that team.
 - Each tab has an info popover: what the source is, whether it is a model, a forecast or a market, when it was last captured, and how values were normalized.
 
+Built in M1-6 (`app/src/ui/chart/`). How the pieces fit, for M1-7 and later charts:
+
+- `model.ts` is the pure logic and is unit tested: `sourcesWithData` (which tabs exist), `chooseSource` (remembered source or silent fallback), `segments` (solid runs and dashed bridges over gaps), plus source names and explanations in `SOURCE_INFO`.
+- `useChartView` holds everything that must survive a source switch (isolated lines, span, weekly or daily, hovered day as a date, compare mode). It never holds the source. The source lives in preferences, per metric.
+- `TimeSeriesChart` only draws lines and reports the hovered day. `SourceTabs` only draws tabs. `TeamMetricChart` wires them to a team metric and is the pattern to copy; the Season page currently shows two of them as the exemplar.
+- "Zoom" is a span choice (Season, 8 wk, 4 wk), not a drag gesture: simpler, and it works by touch.
+- Daily points are placed at their real dates; weekly points are evenly spaced.
+- A weekly chart shows a source only if it has a value at a week point, so a source captured for a few days (Kalshi at the time of writing) appears under Daily first. That follows from the rule, and is worth a second look if Dan finds it confusing.
+- Award charts need the same pattern over `awards[market][source].candidates`; that component is not built (M1-7).
+
 ### 8.3 Hub forecast model [F]
 
 Purpose: a source that is always available, covers every metric, and gives real week-by-week history for 2020 to 2025.
@@ -409,7 +419,7 @@ Checkpoint: Dan sees a bare status page listing every source green, and three da
 | M1-3 ✅ | Import v3 2026 snapshots | O | Ten dates present; spot-check three values per source against v3's live site (2026-11-15: eleven files, see 8.4; 15 values spot-checked against v3's data file, all match) |
 | M1-4 ✅ | `compile.ts`: series, weekly, consensus | O | Unit tests for alignment, gaps and consensus (2026-11-15: `pipeline/compile.test.ts`; rules in `docs/DATA-CONTRACT.md` 3.1, including how consensus avoids mixing raw and de-vigged values) |
 | M1-5 ✅ | Design system: tokens, themes, layout shell, navigation, favorite team | F | Looks right at 360, 768, 1280 in both themes (2026-11-15: built in `app/src/ui/` with preferences in `app/src/lib/prefs.ts`; everything is on one page at `#/styleguide`. Not yet reviewed by Dan. Playwright is not installed yet; M1-6 adds it) |
-| M1-6 | `TimeSeriesChart` and `SourceTabs` with the state model in 8.2 | F | Switching source preserves isolation, zoom and scroll; verified by a Playwright test |
+| M1-6 (built, test missing) | `TimeSeriesChart` and `SourceTabs` with the state model in 8.2 | F | Switching source preserves isolation, zoom and scroll; verified by a Playwright test (2026-11-15: built in `app/src/ui/chart/`, see 8.2. Checked by hand in the browser on real data: isolation, span, resolution and scroll survive a source switch, the choice is remembered, a remembered source without data falls back. **Still to do: install Playwright and write that test; the info popover and compare mode were not checked by hand.**) |
 | M1-7 | Outlook, Standings, Awards pages | O | All charts in 8.1 render for 2026 and 2022 |
 | M1-8 | Leaders pipeline and page | O | 2025 final leaders match nflverse totals |
 | M1-9 | Status page and stale markers | O | Matches `status.json` |
