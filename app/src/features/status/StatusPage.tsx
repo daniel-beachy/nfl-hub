@@ -80,13 +80,12 @@ export function StatusPage() {
   }, []);
 
   return (
-    <main>
-      <h1>NFL Hub</h1>
-      <h2>Data status</h2>
+    <div style={{ overflowX: "auto" }}>
+      <h1>Data status</h1>
       {result === null && <p>Loading…</p>}
       {result?.state === "missing" && <p>No status has been published yet.</p>}
       {result?.state === "error" && <p>Status could not be loaded ({result.message}).</p>}
       {result?.state === "ok" && <Rows status={result.data} />}
-    </main>
+    </div>
   );
 }

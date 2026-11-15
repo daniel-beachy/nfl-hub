@@ -1,0 +1,73 @@
+/*
+ * Design tokens. Every color, size and space in the app comes from here.
+ * Dark is the default; `data-theme` on <html> is set before first paint by the script
+ * in index.html and kept current by ui/theme.ts.
+ * The two --surface values are mirrored in ui/theme.ts (team colors are made readable
+ * against them); ui/theme.test.ts fails if they drift apart.
+ */
+:root {
+  color-scheme: dark;
+  --bg: #0c0f13;
+  --surface: #14181e;
+  --surface-2: #1b2129;
+  --surface-3: #252c36;
+  --border: #2a323d;
+  --border-strong: #3b4553;
+  --text: #e8ebef;
+  --text-muted: #9ba5b3;
+  --text-faint: #6f7987;
+  --accent: #7db7ff;
+  --ok: #4cc38a;
+  --warn: #f1c04a;
+  --bad: #ff8589;
+  --shadow: 0 8px 28px rgb(0 0 0 / 0.5);
+  --scrim: rgb(0 0 0 / 0.6);
+  /* The favorite team's readable color; ui/theme.ts overrides it. Neutral when none. */
+  --team: var(--accent);
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  --page-max: 80rem;
+  --topbar-h: 3.25rem;
+  --tabbar-h: 3.5rem;
+  /* Minimum comfortable touch target. */
+  --tap: 2.75rem;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --surface-3: #e2e7ee;
+  --border: #d8dee6;
+  --border-strong: #b9c2ce;
+  --text: #14181d;
+  --text-muted: #56606d;
+  --text-faint: #7d8794;
+  --accent: #0b5cad;
+  --ok: #18794e;
+  --warn: #8a6100;
+  --bad: #c62a2f;
+  --shadow: 0 8px 28px rgb(20 24 29 / 0.16);
+  --scrim: rgb(20 24 29 / 0.4);
+}

@@ -2,9 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0c0f13" />
     <title>NFL Hub</title>
+    <!-- Sets the saved theme before first paint, so a light-theme user never sees a dark flash.
+         The key and shape are owned by src/lib/prefs.ts. -->
+    <script>
+      try {
+        if (JSON.parse(localStorage.getItem("nfl-hub:prefs:v1")).theme === "light") document.documentElement.dataset.theme = "light";
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

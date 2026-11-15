@@ -1,0 +1,52 @@
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.swatch span {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+}
+.row {
+  margin-top: var(--space-3);
+}
+.stack {
+  display: grid;
+  gap: var(--space-3);
+}
+.gap {
+  height: var(--space-3);
+}
+.note {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
+}
+.divisions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: var(--space-4);
+}
+.division {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  margin-bottom: var(--space-1);
+}
+.team {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 1.75rem;
+}
+.ratio {
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
