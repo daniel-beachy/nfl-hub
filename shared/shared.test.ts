@@ -76,7 +76,13 @@ describe("readable colors", () => {
   });
   test("keeps the primary when it already works", () => {
     expect(readableColor("e31837", "ffb612", "0f1216")).toBe("e31837");
+  });
+  test("a black primary gives way to the alternate; a dark color keeps its hue", () => {
     expect(readableColor("000000", "a5acaf", "0f1216")).toBe("a5acaf");
+    const green = readableColor("204e32", "ffb612", "0f1216");
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(green.slice(i, i + 2), 16)) as [number, number, number];
+    expect(g).toBeGreaterThan(r);
+    expect(g).toBeGreaterThan(b);
   });
 });
 

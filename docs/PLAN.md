@@ -354,6 +354,14 @@ One reusable SVG `Field` component draws a football field section with yard line
 - Layouts designed at 360, 768 and 1280 px. Charts are touch first: tap for tooltip, no hover-only information.
 - A small "More projects" link back to the portfolio.
 
+Built in M1-5. What later tasks need to know:
+
+- **Tokens:** `app/src/ui/tokens.css` holds every color, size and space as a CSS variable, for both themes. Use the variables; do not write a hex color or a pixel size in a page.
+- **Building blocks:** `app/src/ui/primitives.tsx` has `PageHeader`, `Card`, `Grid`, `Badge`, `Notice` and `Segmented`. Pages are composed from these inside `Shell` (`app/src/ui/Shell.tsx`), which draws the header, the navigation (bottom tab bar under 720 px, top bar from 720 px) and the footer.
+- **Preferences:** `app/src/lib/prefs.ts` is the only code that touches `localStorage` (theme, favorite team, source per metric, live delay). Corrupt or missing values fall back field by field.
+- **Team colors:** always `teamColor(id, theme)` or `useTeamColors()` from `app/src/ui/theme.ts`, never `team.color`. A dark color is lightened with its hue kept; eight teams are drawn in another of their colors so no two division rivals look alike (tested). `--team` is the favorite team's color, used for small accents.
+- **Routes:** each area owns `/live/*`, `/season/*` and `/players/*` in `app/src/App.tsx`; the three area pages are placeholders. `#/styleguide` shows every token, block and team color.
+
 ## 12. Deprecation plan
 
 | Repo | Today (2026-11-12) | When | Final state |
@@ -400,7 +408,7 @@ Checkpoint: Dan sees a bare status page listing every source green, and three da
 | M1-2 ✅ | Model backfill 2020 to 2026 and daily run | O | Weekly forecasts exist for every completed week (2026-11-15: a point after every game day, not only weekly, so the daily hub line is exact; 2020 to 2025 have 21 or 22 completed weeks each, 2026 has 9; full backfill about 4 minutes, a normal daily run recomputes only the current season) |
 | M1-3 ✅ | Import v3 2026 snapshots | O | Ten dates present; spot-check three values per source against v3's live site (2026-11-15: eleven files, see 8.4; 15 values spot-checked against v3's data file, all match) |
 | M1-4 ✅ | `compile.ts`: series, weekly, consensus | O | Unit tests for alignment, gaps and consensus (2026-11-15: `pipeline/compile.test.ts`; rules in `docs/DATA-CONTRACT.md` 3.1, including how consensus avoids mixing raw and de-vigged values) |
-| M1-5 | Design system: tokens, themes, layout shell, navigation, favorite team | F | Looks right at 360, 768, 1280 in both themes |
+| M1-5 ✅ | Design system: tokens, themes, layout shell, navigation, favorite team | F | Looks right at 360, 768, 1280 in both themes (2026-11-15: built in `app/src/ui/` with preferences in `app/src/lib/prefs.ts`; everything is on one page at `#/styleguide`. Not yet reviewed by Dan. Playwright is not installed yet; M1-6 adds it) |
 | M1-6 | `TimeSeriesChart` and `SourceTabs` with the state model in 8.2 | F | Switching source preserves isolation, zoom and scroll; verified by a Playwright test |
 | M1-7 | Outlook, Standings, Awards pages | O | All charts in 8.1 render for 2026 and 2022 |
 | M1-8 | Leaders pipeline and page | O | 2025 final leaders match nflverse totals |

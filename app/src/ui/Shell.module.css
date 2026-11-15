@@ -22,8 +22,9 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(10px);
+  /* Solid on phones: a backdrop-filter here would make the header the containing block
+     of the fixed bottom tab bar and pull it to the top. */
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 .topbarInner {
@@ -133,6 +134,10 @@
 @media (min-width: 720px) {
   .shell {
     padding-bottom: 0;
+  }
+  .topbar {
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
   }
   .topbarInner,
   .main,

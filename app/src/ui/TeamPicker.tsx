@@ -20,7 +20,7 @@ export function TeamPicker() {
 
   return (
     <>
-      <button type="button" className={css.trigger} onClick={() => dialog.current?.showModal()} aria-haspopup="dialog">
+      <button type="button" className={css.trigger} onClick={() => !dialog.current?.open && dialog.current?.showModal()} aria-haspopup="dialog">
         <span className={css.swatch} style={team ? { background: teamColor(team.id, theme) } : undefined} aria-hidden="true" />
         <span>{team ? team.id : "My team"}</span>
         <span className="visually-hidden">{team ? `Favorite team: ${team.name}. Change` : "Choose a favorite team"}</span>
