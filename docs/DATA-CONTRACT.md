@@ -60,6 +60,8 @@ One file per UTC day holding what every source said that day. Observations canno
 
 ### 2.1 Rules
 
+- **Imported files.** The 2026 files dated 2026-09-08 to 2026-11-10 were converted from the old tracker (`nfl-season-tracker-v3`) by `pipeline/import-v3.ts` (M1-3), not captured here. They carry a top-level `imported: { from, importedAt, note }`, and a block may carry `provenance` (a sentence on where its values came from). No file this pipeline captures has either field. In those files `raw` is empty (v3 kept only de-vigged values), `durationMs` is 0 (unknown), `normalized` is set from the group sums, and v3's FPI division values were rescaled by v3 to sum to 100%. v3's 09-08 baseline also held Bovada and Polymarket quotes that v3 itself dates to 2026-09-11, after the first week-1 games; they are in the 2026-09-11 file, whose time of day is unknown (`T00:00:00.000Z`) and whose `context` is null.
+
 - A metric a source does not offer is absent. Nothing is zero-filled or null-filled.
 - `context.lastCompletedWeek` is the last regular-season week with every game final (18 in the postseason, `null` otherwise). `gamesInProgress: true` tells the weekly view to skip this snapshot. Phase and week are from the day's first capture. A later capture that puts new data into the file (any block replaced by a non-error block) fetches the scoreboard again and ORs `gamesInProgress`, so one block captured during games marks the whole day; once `true` it stays `true`.
 - `observedAt` is the provider's own timestamp when it gives one (ESPN FPI's `lastUpdated`), else `null`.

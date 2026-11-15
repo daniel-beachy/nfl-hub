@@ -97,6 +97,8 @@ export const sourceBlockSchema = z
      * first snapshots (QA-M0-4), so absent in files written before 2026-11-14.
      */
     normalized: z.partialRecord(z.enum(TEAM_METRICS), z.boolean()).optional(),
+    /** Imported blocks only: anything about where these values came from that the fields cannot say. */
+    provenance: z.string().optional(),
   })
   .refine((b) => (b.status === "ok") === (b.error === null), {
     message: "error must be null exactly when status is ok",
@@ -123,6 +125,13 @@ export const snapshotSchema = z.strictObject({
   /** Null when the schedule lookup failed; we do not guess. */
   context: snapshotContextSchema.nullable(),
   sources: z.partialRecord(sourceId, sourceBlockSchema),
+  /**
+   * Present only on files converted from another project's captures (pipeline/import-v3.ts),
+   * never on files this pipeline captured itself.
+   */
+  imported: z
+    .strictObject({ from: z.string(), importedAt: isoDateTime, note: z.string() })
+    .optional(),
 });
 export type Snapshot = z.infer<typeof snapshotSchema>;
 

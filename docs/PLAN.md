@@ -276,7 +276,7 @@ Purpose: a source that is always available, covers every metric, and gives real 
 
 ### 8.4 Carrying over 2026 history [O]
 
-One-off script `pipeline/import-v3.ts` converts the ten real weekly snapshots in `nfl-season-tracker-v3/public/data/seasons/2026.json` (2026-09-08 to 2026-11-10; ESPN FPI, DraftKings, Bovada, Polymarket, awards) into daily snapshot files on their capture dates. ESPN team ids map to canonical abbreviations; percentages become fractions; the unavailable Bovada weeks stay `error`. The September baseline's retrospectively attached award odds keep a `provenance` note. The mocked 2025 season is not imported. Commit the output, then delete the script's dependency on v3.
+One-off script `pipeline/import-v3.ts` converts the ten real weekly snapshots in `nfl-season-tracker-v3/public/data/seasons/2026.json` (2026-09-08 to 2026-11-10; ESPN FPI, DraftKings, Bovada, Polymarket, awards) into daily snapshot files on their capture dates. ESPN team ids map to canonical abbreviations; percentages become fractions; the unavailable Bovada weeks stay `error`. The September baseline's retrospectively attached award odds keep a `provenance` note. The mocked 2025 season is not imported. Commit the output, then delete the script's dependency on v3. Done in M1-3 with one change: v3's September 8 baseline also holds Bovada and Polymarket quotes that v3's own notes date to September 11, after the first week-1 games, so they went into a 2026-09-11 file instead of being presented as preseason (eleven files in all). The script now needs `--file` and has no other tie to v3. Details in `docs/DATA-CONTRACT.md` 2.1.
 
 ## 9. Live area
 
@@ -398,7 +398,7 @@ Checkpoint: Dan sees a bare status page listing every source green, and three da
 |---|---|---|---|
 | M1-1 ✅ | Hub model: ratings, simulation, tiebreakers, `docs/MODEL.md` | F | 2020 to 2025 final seeds reproduce; evaluation numbers recorded (2026-11-13: seeds reproduce; held-out Brier 0.2225 against the spread's 0.2094, so the 0.01 target in 8.3 was missed by 0.003) |
 | M1-2 ✅ | Model backfill 2020 to 2026 and daily run | O | Weekly forecasts exist for every completed week (2026-11-15: a point after every game day, not only weekly, so the daily hub line is exact; 2020 to 2025 have 21 or 22 completed weeks each, 2026 has 9; full backfill about 4 minutes, a normal daily run recomputes only the current season) |
-| M1-3 | Import v3 2026 snapshots | O | Ten dates present; spot-check three values per source against v3's live site |
+| M1-3 ✅ | Import v3 2026 snapshots | O | Ten dates present; spot-check three values per source against v3's live site (2026-11-15: eleven files, see 8.4; 15 values spot-checked against v3's data file, all match) |
 | M1-4 | `compile.ts`: series, weekly, consensus | O | Unit tests for alignment, gaps and consensus |
 | M1-5 | Design system: tokens, themes, layout shell, navigation, favorite team | F | Looks right at 360, 768, 1280 in both themes |
 | M1-6 | `TimeSeriesChart` and `SourceTabs` with the state model in 8.2 | F | Switching source preserves isolation, zoom and scroll; verified by a Playwright test |
