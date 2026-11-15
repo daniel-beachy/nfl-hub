@@ -18,7 +18,8 @@
     "health": "tsx pipeline/health.ts",
     "doctor": "tsx pipeline/doctor.ts",
     "nflverse": "tsx pipeline/nflverse/stage.ts",
-    "model": "tsx pipeline/model/stage.ts"
+    "model": "tsx pipeline/model/stage.ts",
+    "compile": "tsx pipeline/compile.ts"
   },
   "dependencies": {
     "d3-scale": "^4.0.3",

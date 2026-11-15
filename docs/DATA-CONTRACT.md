@@ -106,7 +106,7 @@ Applied identically to every source after its adapter has mapped provider values
 
 ## 3. Compiled series
 
-`shared/series.ts`, built in M1-4. One file per season and resolution:
+`shared/series.ts`, built by `pipeline/compile.ts` (M1-4) into `derived/season/{season}/series.json` (daily) and `weekly.json`, for every season from 2020. One file per season and resolution:
 
 ```jsonc
 {
@@ -121,7 +121,17 @@ Applied identically to every source after its adapter has mapped provider values
 }
 ```
 
-A source appears under a metric only if it has at least one value, so the app shows a tab exactly when there is data. `consensus` is the median of the market sources (`draftkings`, `polymarket`, `kalshi`, `bovada`) on days when at least two have a value.
+A source appears under a metric only if it has at least one value, so the app shows a tab exactly when there is data; likewise a team appears only if it has a value.
+
+### 3.1 Rules
+
+- **Daily axis:** the season's snapshot dates. A season with no snapshots (2020 to 2025) uses the hub model's point dates (the day after each game day).
+- **Hub values** come from `data/model/{season}.json` (section 6): at any date, the latest point on or before it, or the preseason point before the first game. This is exact, because the forecast changes only when a game is played. Past the first unplayed game day after the latest point there is no hub value (the model stage is behind), never a carried-forward one.
+- **Weekly axis:** one point per completed week, from the model's `weekComplete` points (the day after each week's last game, by the schedule). Each week uses the first snapshot on or after that day and before the next week ends, skipping snapshots with `gamesInProgress: true`; week 0 (preseason) uses the latest snapshot on or before the first game day. A week with no such snapshot is still a point, dated the day after its last game, with only the hub value. Its hub value is that week's own `weekComplete` point. `weeks` holds nflverse week numbers (the postseason continues after the last regular week). Without a model file the weeks come from the snapshots' `lastCompletedWeek`.
+- **Consensus** is the median of the market sources (`draftkings`, `polymarket`, `kalshi`, `bovada`) for one team, metric and snapshot, when at least two have a value. De-vigged and raw values are never mixed: a group metric (`superBowl`, `conference`, `seed1`, `division`) counts as de-vigged when the team's whole group is in that block (finalize de-vigs a market's group exactly then, so this also covers snapshots without `normalized`); `playoffs` only when the block has `normalized.playoffs: true`; `wins` has one basis. The larger set with at least two values is used, de-vigged on a tie. In practice `playoffs` consensus is a median of raw "yes" prices, because no market quotes both sides today. Award consensus is the median of the markets' raw prices for a candidate listed by at least two.
+- **Awards:** a candidate is the same person across sources and days by `playerId`, else by name ignoring case, punctuation and a Jr/Sr/II/III suffix. Per source and market, a candidate is kept if it was in that source's top 10 on at least one date. Candidates are ordered by their value on the last date, then by their last value.
+- **Availability:** `firstDate` and `lastDate` are the first and last axis dates with any value; `daysMissingInLast7` counts calendar days, among the 7 ending on the file's last date, on which the source had no value (no snapshot that day counts as missing; the hub has a value every day up to its next unplayed game day). The weekly file repeats the daily file's availability.
+- Values are rounded like the snapshots (probabilities 4 decimals, wins 2). The stage writes nothing unless every season compiled and validated.
 
 ## 4. status.json
 

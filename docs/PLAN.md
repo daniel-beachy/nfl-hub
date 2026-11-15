@@ -399,7 +399,7 @@ Checkpoint: Dan sees a bare status page listing every source green, and three da
 | M1-1 ✅ | Hub model: ratings, simulation, tiebreakers, `docs/MODEL.md` | F | 2020 to 2025 final seeds reproduce; evaluation numbers recorded (2026-11-13: seeds reproduce; held-out Brier 0.2225 against the spread's 0.2094, so the 0.01 target in 8.3 was missed by 0.003) |
 | M1-2 ✅ | Model backfill 2020 to 2026 and daily run | O | Weekly forecasts exist for every completed week (2026-11-15: a point after every game day, not only weekly, so the daily hub line is exact; 2020 to 2025 have 21 or 22 completed weeks each, 2026 has 9; full backfill about 4 minutes, a normal daily run recomputes only the current season) |
 | M1-3 ✅ | Import v3 2026 snapshots | O | Ten dates present; spot-check three values per source against v3's live site (2026-11-15: eleven files, see 8.4; 15 values spot-checked against v3's data file, all match) |
-| M1-4 | `compile.ts`: series, weekly, consensus | O | Unit tests for alignment, gaps and consensus |
+| M1-4 ✅ | `compile.ts`: series, weekly, consensus | O | Unit tests for alignment, gaps and consensus (2026-11-15: `pipeline/compile.test.ts`; rules in `docs/DATA-CONTRACT.md` 3.1, including how consensus avoids mixing raw and de-vigged values) |
 | M1-5 | Design system: tokens, themes, layout shell, navigation, favorite team | F | Looks right at 360, 768, 1280 in both themes |
 | M1-6 | `TimeSeriesChart` and `SourceTabs` with the state model in 8.2 | F | Switching source preserves isolation, zoom and scroll; verified by a Playwright test |
 | M1-7 | Outlook, Standings, Awards pages | O | All charts in 8.1 render for 2026 and 2022 |
