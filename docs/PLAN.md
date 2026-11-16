@@ -328,6 +328,14 @@ One mechanism for everything on screen, so nothing can leak:
 
 `?replay={eventId}&speed=20` feeds a finished game's summary through the same client as if it were live, releasing plays by `wallclock`. It is how Live is developed and tested when no game is on, and the Playwright smoke test uses it with a committed fixture game.
 
+Built in M2-4:
+
+- `app/src/lib/espn/replay.ts` is a `LiveSource` like the ESPN one, so the feed, the polling and the pages cannot tell the difference. Its clock starts a minute before the first play and runs `speed` times real time (polling speeds up with it); each request answers with the game as it stood at that moment, in ESPN's own shape.
+- Addresses: `#/live?replay=401873063&speed=20` (a slate of that one game) and `#/live/game/401873063?replay=401873063&speed=20`. `&from=1800` starts that many seconds after the first play. The game is fetched from ESPN once; links inside Live keep the replay settings.
+- The fixture game is `app/src/lib/espn/fixtures/summary-401873063.json` (SF 46 at DAL 40, 2026-11-15, 203 plays). `replay.test.ts` checks every moment of it; `e2e/live-replay.spec.ts` runs it in the browser with the fixture answered in place of ESPN.
+- Limit: a final summary only has the final box score, so a replay has no box score until the game is over. `scripts/record-live.ts {eventId}` records a real game poll by poll (to `tmp/live-recordings/`, not committed) and reports what the live shape looked like; replaying such a recording is not built.
+- The Live pages (`app/src/features/live/`) are a bare first version that proves the path: a list of the week's games and a game page with score and plays. They draw the newest data with no delay and say so on screen.
+
 ## 10. Players area (the NFL Visualized rebuild)
 
 ### 10.1 Data [O, pipeline]
@@ -435,7 +443,7 @@ Checkpoint: Dan uses the season view for a week. If accepted: retire v3 (section
 | M2-1 ✅ | ESPN live client and schemas | F | Survives malformed payloads in tests (2026-11-16: `app/src/lib/espn/`, described in `docs/SOURCES.md` "ESPN live games". `LiveFeed` in `feed.ts` is the client; pages use it through the views of M2-2, never directly. Tests in `espn.test.ts` on three real recorded responses, including 500 random mutations of a game. Built and checked on finished and not-yet-started games only: the in-progress shape is unverified, see SOURCES) |
 | M2-2 | Time-shift buffer, cold start, calibration | F | Replay test proves no element shows data newer than the delay |
 | M2-3 | EP table builder and EPA estimator, validated | F | `docs/LIVE-MODEL.md` reports the numbers against the targets |
-| M2-4 | Replay harness and fixture game | F | `?replay=` works locally and in Playwright |
+| M2-4 ✅ | Replay harness and fixture game | F | `?replay=` works locally and in Playwright (2026-11-16: see 9.5. Checked in the browser against the real ESPN API as well) |
 | M2-5 | Slate page | O | Correct for a live window, checked by replay |
 | M2-6 | Game page: header, WP chart, play feed, drives, team comparison, box score | O | Verified on a replayed game at phone and desktop widths |
 | M2-7 | Stat explainers | O | Every advanced stat has one |
