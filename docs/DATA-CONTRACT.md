@@ -200,6 +200,11 @@ Checks before the manifest is written: every column in the dataset's `required` 
     "date": "2026-11-13",                    // the latest point
     "winDist": { "KC": [0, 0, 0.0001, ...] },  // chance of exactly 0 to 17 wins
     "games": [ { "id": "2026_11_NYJ_NE", "week": 11, "date": "2026-11-15", "home": "NE", "away": "NYJ", "homeWinProb": 0.6123 } ]
+  },
+  "standings": {                             // null before the first game; absent in files from before MODEL_VERSION 2
+    "date": "2026-11-13",                    // the latest point: games final before it
+    "records": { "KC": { "w": 6, "l": 3, "t": 0 } },
+    "order": { "AFC": ["BUF", "CIN", ...], "NFC": [...] }   // 16 each: seeds 1 to 4 division winners, 5 to 7 wild cards, then the rest
   }
 }
 ```
@@ -210,6 +215,7 @@ Rules:
 - **Points:** the preseason point (week 0), dated the season's first game day, then one point per game day once every game that day is final, dated the next day so it lines up with the snapshot captured that morning. A game day still being played gets no point yet. A game that was never played does not hold back later points (it counts as settled once a later game is final).
 - **Between points the forecast does not change** (no game was played), so the forecast for any date is the latest point on or before it, and the preseason point also stands for every earlier date of its season. `compile.ts` relies on this; it is exact, not interpolation.
 - **Weekly view:** points with `weekComplete: true` are the day after the last game of `week`. `week` follows nflverse numbering: regular weeks 1 to 18 (17 in 2020), then the postseason rounds.
+- **Standings** are the regular season as of the latest point, "if the season ended today", ordered by the same tiebreaker code that reproduces the real 2020 to 2025 seeds (`pipeline/model/standings.ts`). A tie still level after every tiebreaker step is broken by a coin flip seeded with the season, so it is stable from run to run. Added 2026-11-16 (`MODEL_VERSION` 2).
 - Every point has all 32 teams. Probabilities rounded to 4 decimals, wins to 2, ratings to 1.
 - The file for a season is recomputed only when its `inputHash` changes (a new result, a schedule change, new parameters or simulation count, or `MODEL_VERSION` in `stage.ts`); otherwise the previous file is kept as is.
 - The stage writes nothing unless every season succeeds. A season with no schedule yet (the new season, before the schedule is released in spring) is skipped without error; a past season with no schedule fails the stage.

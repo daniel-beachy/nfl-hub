@@ -55,8 +55,9 @@ for (const season of [2026, 2022]) {
     await page.getByRole("group", { name: "Season view" }).getByRole("button", { name: "Standings" }).click();
     await expect(page).toHaveURL(new RegExp(`#/season/standings\\?season=${season}$`));
     await expect(page.locator("tr[data-team]")).toHaveCount(32);
-    await expect(page.getByText(/Hub Model as of/)).toBeVisible();
-    await expect(page.locator('tr[data-team="KC"] td').first()).toHaveText(/^\d+\.\d$/);
+    await expect(page.getByText(/Odds from the Hub Model/)).toBeVisible();
+    await expect(page.locator('tr[data-team="KC"] td').first()).toHaveText(/^\d+-\d+(-\d+)?$/);
+    await expect(page.locator('tr[data-team="KC"] td').nth(2)).toHaveText(/^\d+\.\d$/);
   });
 }
 
@@ -71,3 +72,12 @@ for (const season of [2026, 2022]) {
     await expect(race.getByRole("img")).toHaveAccessibleName(/^Sacks/);
   });
 }
+
+test("standings show records and seeds if the season ended today", async ({ page }) => {
+  await page.goto("./#/season/standings?season=2022");
+  await expect(page.locator('tr[data-team="KC"]')).toContainText("14-3");
+  await expect(page.locator('tr[data-team="HOU"]')).toContainText("3-13-1");
+  await expect(page.locator("td[data-seed]")).toHaveCount(14);
+  await expect(page.locator('tr[data-team="KC"] td[data-seed="1"]')).toHaveCount(1);
+  await expect(page.locator('tr[data-team="PHI"] td[data-seed="1"]')).toHaveCount(1);
+});

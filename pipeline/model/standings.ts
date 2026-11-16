@@ -11,7 +11,7 @@ export const DIV_OF = Int8Array.from(TEAMS.map((t) => DIVISION_IDS.indexOf(t.div
 export const CONF_OF = Int8Array.from(TEAMS.map((t) => (t.conference === "AFC" ? 0 : 1)));
 const DIV_TEAMS: number[][] = DIVISION_IDS.map((_, d) => TEAMS.map((_, i) => i).filter((i) => DIV_OF[i] === d));
 
-const MAX_GAMES = 20;
+export const MAX_GAMES = 20;
 /** Returns a number in [0, 1). Only used when every tiebreaker step is level. */
 export type Rng = () => number;
 

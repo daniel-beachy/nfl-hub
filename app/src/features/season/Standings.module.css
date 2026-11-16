@@ -75,3 +75,6 @@
   color: var(--text);
   font-size: var(--text-sm);
 }
+.out {
+  color: var(--text-faint);
+}

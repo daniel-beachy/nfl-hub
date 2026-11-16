@@ -53,6 +53,19 @@ export const modelGameSchema = z.strictObject({
   homeWinProb: probability,
 });
 
+/**
+ * Regular-season records and the conference order "if the season ended today", from the games
+ * the latest point counts. Seeds 1 to 4 are division winners, 5 to 7 wild cards, then the rest;
+ * NFL tiebreakers as in pipeline/model/standings.ts, with any tie left after them broken by a
+ * fixed-seed coin flip. Null before the first game. Optional: files written before it existed.
+ */
+export const modelStandingsSchema = z.strictObject({
+  date: isoDate,
+  records: allTeams(z.strictObject({ w: z.number().int().min(0), l: z.number().int().min(0), t: z.number().int().min(0) })),
+  order: z.strictObject({ AFC: z.array(teamId).length(16), NFC: z.array(teamId).length(16) }),
+});
+export type ModelStandings = z.infer<typeof modelStandingsSchema>;
+
 export const modelSeasonSchema = z.strictObject({
   schemaVersion: z.literal(MODEL_SCHEMA_VERSION),
   season: z.number().int(),
@@ -77,5 +90,6 @@ export const modelSeasonSchema = z.strictObject({
       games: z.array(modelGameSchema),
     })
     .nullable(),
+  standings: modelStandingsSchema.nullable().optional(),
 });
 export type ModelSeason = z.infer<typeof modelSeasonSchema>;

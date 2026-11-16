@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { modelSeasonSchema } from "../../shared/model.ts";
 import { fixtureGames } from "./fixtures/load.ts";
-import { addDays, buildSeason, inputHash, planPoints, runModelStage } from "./stage.ts";
+import { addDays, buildSeason, inputHash, planPoints, runModelStage, standingsAsOf } from "./stage.ts";
 import { ELO_PARAMS } from "./elo.ts";
 import type { ModelGame } from "./types.ts";
 
@@ -111,5 +111,20 @@ describe("runModelStage", () => {
 
   it("a past season with no schedule fails the stage", () => {
     expect(() => runModelStage({ ...base, games: games.filter((g) => g.season !== 2020), previous: () => undefined })).toThrow(/2020/);
+  });
+});
+
+describe("standingsAsOf", () => {
+
+  it("gives each team's real record and the real seeds once the 2022 regular season is over", () => {
+    const st = standingsAsOf(all, 2022, "2023-01-10")!;
+    expect(st.records.KC).toEqual({ w: 14, l: 3, t: 0 });
+    expect(st.records.HOU).toEqual({ w: 3, l: 13, t: 1 });
+    expect(st.order.AFC.slice(0, 7).join(" ")).toBe("KC BUF CIN JAX LAC BAL MIA");
+    expect(st.order.NFC.slice(0, 7).join(" ")).toBe("PHI SF MIN TB DAL NYG SEA");
+    expect(new Set([...st.order.AFC, ...st.order.NFC]).size).toBe(32);
+  });
+  it("is null before the season's first game", () => {
+    expect(standingsAsOf(all, 2022, "2022-09-01")).toBeNull();
   });
 });

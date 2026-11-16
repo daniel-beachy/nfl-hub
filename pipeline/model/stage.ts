@@ -1,16 +1,17 @@
 import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { seasonForDate } from "../../shared/ids.ts";
-import { MODEL_SCHEMA_VERSION, modelSeasonSchema, type ModelPoint, type ModelSeason, type ModelTeam } from "../../shared/model.ts";
+import { MODEL_SCHEMA_VERSION, modelSeasonSchema, type ModelPoint, type ModelSeason, type ModelStandings, type ModelTeam } from "../../shared/model.ts";
 import { TEAM_IDS, type TeamId } from "../../shared/teams.ts";
 import { isMain, parseArgs, readJsonIfExists, REPO_ROOT, writeFileAtomic } from "../lib/files.ts";
 import { createHttp } from "../lib/http.ts";
 import { DATASETS } from "../nflverse/datasets.ts";
 import { loadDataset } from "../nflverse/stage.ts";
 import { ELO_PARAMS, type EloParams } from "./elo.ts";
-import { asOf, forecast, type Forecast } from "./forecast.ts";
+import { asOf, forecast, mulberry32, type Forecast } from "./forecast.ts";
+import { MAX_GAMES, Standings } from "./standings.ts";
 import { GAME_COLUMNS, toModelGames } from "./games.ts";
-import { isPlayed, type ModelGame } from "./types.ts";
+import { isPlayed, teamIndex, type ModelGame } from "./types.ts";
 
 // The model stage (docs/PLAN.md 5.4 and 8.3, docs/MODEL.md): for every season since 2020, the
 // hub forecast as it stood after every game day, using only the games final before that date
@@ -26,7 +27,7 @@ import { isPlayed, type ModelGame } from "./types.ts";
 export const FIRST_SEASON = 2020;
 export const SIMS = 20_000;
 /** Bump when the model or this stage changes in a way that changes the output. */
-export const MODEL_VERSION = 1;
+export const MODEL_VERSION = 2;
 
 const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places;
 
@@ -117,6 +118,28 @@ export interface SeasonInput {
   now: Date;
 }
 
+/** Records and conference order from the games final before `date`; null if none has been played. Pure. */
+export function standingsAsOf(games: readonly ModelGame[], season: number, date: string): ModelStandings | null {
+  const st = Standings.from(asOf(games, date).filter((g) => g.season === season));
+  if (TEAM_IDS.every((id) => st.gp[teamIndex(id)] === 0)) return null;
+  const records = Object.fromEntries(
+    TEAM_IDS.map((id) => {
+      const t = teamIndex(id);
+      let w = 0;
+      let ties = 0;
+      for (let k = 0; k < st.gp[t]!; k++) {
+        const p = st.logPts[t * MAX_GAMES + k];
+        if (p === 2) w++;
+        else if (p === 1) ties++;
+      }
+      return [id, { w, l: st.gp[t]! - w - ties, t: ties }];
+    }),
+  ) as ModelStandings["records"];
+  const rng = mulberry32(season);
+  const order = (conf: number) => st.seed(conf, rng, 16).map((t) => TEAM_IDS[t]!);
+  return { date, records, order: { AFC: order(0), NFC: order(1) } };
+}
+
 /** Every point of one season. Pure apart from the clock passed in. Returns null if the season has no schedule. */
 export function buildSeason(o: SeasonInput): ModelSeason | null {
   const params = o.params ?? ELO_PARAMS;
@@ -149,6 +172,7 @@ export function buildSeason(o: SeasonInput): ModelSeason | null {
     gamesUpdatedAt: o.gamesUpdatedAt,
     points,
     current,
+    standings: standingsAsOf(o.games, o.season, lastDate),
   } satisfies ModelSeason);
 }
 
