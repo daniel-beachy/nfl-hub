@@ -63,18 +63,20 @@ Run these locally with fixtures and with the network deliberately broken (point 
 | S6 | Compare-sources mode for one team | One line per available source, correctly labeled |
 | S7 | Spot-check values: 3 teams by 3 metrics by every source, latest date | Match the provider's own page within rounding; de-vigged groups sum to 100% |
 | S8 | Consensus | Equals the median of the market sources present that day; absent when fewer than two |
-| S9 | Imported v3 history | Ten dates present; 3 values per source match v3's live site |
+| S9 | Imported v3 history | Eleven dates present (plan 8.4 says why not ten); 3 values per source match v3's live site |
 | S10 | Hub model sanity | Per-conference playoff odds sum to 7, division odds to 1, Super Bowl to 1; eliminated teams show 0; clinched show 1 |
 | S11 | Hub model history | Final seeds for 2020 to 2025 match the real ones; backfilled seasons carry the "computed afterwards" label |
 | S12 | Gaps | A missing day draws a dashed bridge, not a drop to zero |
-| S13 | Leaders | Top 10 for 6 categories match nflverse totals and ESPN's leaders page; cumulative lines never decrease |
+| S13 | Leaders | Top 10 for 6 categories match nflverse totals and ESPN's leaders page (regular season only); cumulative lines never decrease, except EPA, which can |
 | S14 | Awards | Candidates and order match the provider page for 2 awards per source |
 | S15 | Season boundaries: preseason, week 1, week 18, playoffs, the day after the Super Bowl, a season with no data yet | Sensible labels, no crash, no mislabeled weeks |
 | S16 | Favorite team | Emphasized on every chart; persists across reloads; changing it updates everything |
 | S17 | Team colors | All 32 readable on both themes; no two division rivals indistinguishable |
 | S18 | Touch | Tooltips, isolation and tabs all work by tap; nothing is hover-only |
 | S19 | Status page | Matches `status.json`; links to issues work |
-| S20 | Static data fails to load (block `/data/`) | Cached copy with an "offline copy" badge, or a clear message; never a blank page |
+| S20 | Static data fails to load (block `/data/`) | Cached copy with an "offline copy" badge, or a clear message; never a blank page (the offline copy of plan 7.4 is not built as of 2026-11-16, so expect the message) |
+| S21 | Standings | Records and seeds match NFL.com for the 2022 final and for the current week ("if the season ended today"); each division ordered by the standings; odds columns match the Hub Model tab on Outlook |
+| S22 | Season selector | Every season 2020 to current loads; pre-2026 seasons say once that they are Hub Model only and offer no Awards view; the season survives a reload |
 
 ## L. Live (M2)
 
