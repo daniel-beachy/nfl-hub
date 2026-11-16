@@ -1,8 +1,10 @@
-import { CONFERENCES, DIVISION_NAMES } from "../../../../shared/ids.ts";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router";
+import { AWARD_MARKETS, CONFERENCES, DIVISION_NAMES, type AwardMarket } from "../../../../shared/ids.ts";
 import type { SeasonSeries } from "../../../../shared/series.ts";
 import { teamsInConference, teamsInDivision } from "../../../../shared/teams.ts";
+import { AwardChart, hasAward } from "../../ui/chart/AwardChart.tsx";
 import { TeamMetricChart } from "../../ui/chart/TeamMetricChart.tsx";
-import { Grid, Notice, PageHeader } from "../../ui/primitives.tsx";
+import { Grid, Notice, PageHeader, Segmented } from "../../ui/primitives.tsx";
 import { seasonList, useSeasonFiles, useSelectedSeason } from "./useSeason.ts";
 import css from "./SeasonPage.module.css";
 
@@ -60,6 +62,55 @@ function Outlook({ daily, weekly }: { daily: SeasonSeries; weekly: SeasonSeries 
   );
 }
 
+const AWARD_TITLES: Record<AwardMarket, string> = {
+  mvp: "MVP",
+  opoy: "Offensive Player of the Year",
+  dpoy: "Defensive Player of the Year",
+  oroy: "Offensive Rookie of the Year",
+  droy: "Defensive Rookie of the Year",
+  coy: "Coach of the Year",
+  cpoy: "Comeback Player of the Year",
+};
+
+function Awards({ daily, weekly }: { daily: SeasonSeries; weekly: SeasonSeries | null }) {
+  return (
+    <Grid min={30}>
+      {AWARD_MARKETS.filter((m) => hasAward(daily, m)).map((m) => (
+        <AwardChart key={m} title={AWARD_TITLES[m]} market={m} daily={daily} weekly={weekly} />
+      ))}
+    </Grid>
+  );
+}
+
+type View = "outlook" | "awards";
+
+/** Outlook, Awards: only the views this season has data for, so none can be empty. */
+function SubNav({ views }: { views: readonly { value: View; label: string }[] }) {
+  const { pathname, search } = useLocation();
+  const navigate = useNavigate();
+  const value: View = pathname.endsWith("/awards") ? "awards" : "outlook";
+  if (views.length < 2) return null;
+  return <Segmented label="Season view" options={views} value={value} onChange={(v) => navigate({ pathname: v === "outlook" ? "/season" : `/season/${v}`, search })} />;
+}
+
+function Loaded({ daily, weekly }: { daily: SeasonSeries; weekly: SeasonSeries | null }) {
+  const { search } = useLocation();
+  const awards = AWARD_MARKETS.some((m) => hasAward(daily, m));
+  const views = [{ value: "outlook" as const, label: "Outlook" }, ...(awards ? [{ value: "awards" as const, label: "Awards" }] : [])];
+  return (
+    <>
+      <div className={css.subnav}>
+        <SubNav views={views} />
+      </div>
+      <Routes>
+        <Route index element={<Outlook daily={daily} weekly={weekly} />} />
+        {awards && <Route path="awards" element={<Awards daily={daily} weekly={weekly} />} />}
+        <Route path="*" element={<Navigate to={{ pathname: "/season", search }} replace />} />
+      </Routes>
+    </>
+  );
+}
+
 export function SeasonPage() {
   const [season, setSeason] = useSelectedSeason();
   const files = useSeasonFiles(season);
@@ -83,7 +134,7 @@ export function SeasonPage() {
           {files.daily.state === "missing" ? `Nothing has been published for ${season} yet.` : files.daily.message}
         </Notice>
       )}
-      {files?.daily.state === "ok" && <Outlook key={season} daily={files.daily.data} weekly={files.weekly.state === "ok" ? files.weekly.data : null} />}
+      {files?.daily.state === "ok" && <Loaded key={season} daily={files.daily.data} weekly={files.weekly.state === "ok" ? files.weekly.data : null} />}
     </>
   );
 }

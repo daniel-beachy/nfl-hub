@@ -27,3 +27,6 @@
 .select select:hover {
   border-color: var(--border-strong);
 }
+.subnav:not(:empty) {
+  margin-bottom: var(--space-3);
+}
