@@ -4,7 +4,7 @@ import { TEAM_IDS, type TeamId } from "../../../../shared/teams.ts";
 import { setSourcePref, usePrefs } from "../../lib/prefs.ts";
 import { Badge, Card, Notice, Segmented } from "../primitives.tsx";
 import { teamColor } from "../theme.ts";
-import { chooseSource, lastValue, nearestIndex, rangeIndexes, SOURCE_INFO, sourcesWithData, staleSince, type Values } from "./model.ts";
+import { chooseSource, lastValue, nearestIndex, rangeIndexes, shortDate, SOURCE_INFO, sourcesWithData, staleSince, type Values } from "./model.ts";
 import { SourceTabs, type SourceTab } from "./SourceTabs.tsx";
 import { TimeSeriesChart, type Line } from "./TimeSeriesChart.tsx";
 import { spanStart, useChartView, type Resolution, type Span } from "./useChartView.ts";
@@ -92,7 +92,7 @@ export function TeamMetricChart({ title, metric, daily, weekly, teams = TEAM_IDS
       title={
         <>
           {title} {comparing && <Badge>{only} across sources</Badge>}
-          {!comparing && current.staleSince && <Badge tone="warn">stale since {current.staleSince.slice(5)}</Badge>}
+          {!comparing && current.staleSince && <Badge tone="warn">stale since {shortDate(current.staleSince)}</Badge>}
         </>
       }
       actions={

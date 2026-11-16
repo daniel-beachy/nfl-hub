@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import type { SeriesSourceId } from "../../../../shared/ids.ts";
-import { SOURCE_INFO } from "./model.ts";
+import { shortDate, SOURCE_INFO } from "./model.ts";
 import css from "./SourceTabs.module.css";
 
 // One tab per source that has data for this chart, and nothing else: no disabled tabs,
@@ -15,7 +15,6 @@ export interface SourceTab {
   lastDate: string;
 }
 
-const shortDate = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
 
 export function SourceTabs({ tabs, value, onChange, label }: { tabs: readonly SourceTab[]; value: SeriesSourceId; onChange: (id: SeriesSourceId) => void; label: string }) {
   const infoId = useId();

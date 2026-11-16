@@ -112,10 +112,16 @@ export function lastValue(values: Values, i0: number, i1: number): Point | null 
   return null;
 }
 
-/** "Stale since" date: the source's last value is older than the axis's last date. */
+/** Days a source may lag the chart's latest date before its tab says "stale since" (plan 7.4). */
+export const STALE_AFTER_DAYS = 3;
+
+/** "Stale since" date: the source's last value is more than STALE_AFTER_DAYS older than the axis's last date. */
 export function staleSince(lastDate: string, axisLastDate: string): string | null {
-  return lastDate < axisLastDate ? lastDate : null;
+  return Date.parse(axisLastDate) - Date.parse(lastDate) > STALE_AFTER_DAYS * 86_400_000 ? lastDate : null;
 }
+
+/** "Nov 9" for an ISO date, in the reader's locale. */
+export const shortDate = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
 
 /** Spread labels vertically so none overlap: positions are moved apart by at least `gap`, kept inside [min, max]. */
 export function spreadLabels(ys: readonly number[], gap: number, min: number, max: number): number[] {

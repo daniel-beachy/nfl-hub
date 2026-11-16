@@ -61,8 +61,11 @@ describe("axis helpers", () => {
     expect(nearestIndex(dates, "2026-09-17")).toBe(1);
     expect(nearestIndex(dates, "2030-01-01")).toBe(3);
   });
-  it("marks a source stale only when it is behind the axis", () => {
+  it("marks a source stale only when it is more than 3 days behind the axis (plan 7.4)", () => {
     expect(staleSince("2026-11-09", "2026-11-15")).toBe("2026-11-09");
+    expect(staleSince("2026-11-11", "2026-11-15")).toBe("2026-11-11");
+    expect(staleSince("2026-11-12", "2026-11-15")).toBeNull();
+    expect(staleSince("2026-11-14", "2026-11-15")).toBeNull();
     expect(staleSince("2026-11-15", "2026-11-15")).toBeNull();
   });
   it("spreads overlapping labels and keeps them in bounds", () => {

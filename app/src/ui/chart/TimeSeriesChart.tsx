@@ -1,6 +1,6 @@
 import { scaleLinear } from "d3-scale";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import { lastValue, segments, spreadLabels, type Values } from "./model.ts";
+import { lastValue, segments, shortDate, spreadLabels, type Values } from "./model.ts";
 import css from "./TimeSeriesChart.module.css";
 
 // A line chart over the season, drawn in SVG. It knows nothing about sources, teams or
@@ -37,7 +37,6 @@ export interface TimeSeriesChartProps {
 
 const M = { top: 10, right: 46, bottom: 24, left: 40 };
 const TOOLTIP_ROWS = 8;
-const shortDate = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
 
 function useWidth() {
   const ref = useRef<HTMLDivElement>(null);
