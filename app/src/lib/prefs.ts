@@ -18,6 +18,8 @@ const prefsSchema = z.object({
   sources: z.record(z.string(), z.string()).catch({}),
   /** Spoiler delay for live games, in seconds (plan 9.3). */
   liveDelaySeconds: z.number().min(0).max(600).catch(0),
+  /** False while Dan has switched to "live"; the calibrated delay is kept for switching back. */
+  liveDelayOn: z.boolean().catch(true),
 });
 export type Prefs = z.infer<typeof prefsSchema>;
 

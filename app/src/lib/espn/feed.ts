@@ -1,7 +1,8 @@
-import { normalizeScoreboard, normalizeSummary, type LiveGame, type LiveSlate } from "./game.ts";
+import { normalizeScoreboard, normalizeSummary, type LiveBox, type LiveGame, type LiveSlate } from "./game.ts";
 import { browserEnv, Poller, type PollerEnv } from "./poller.ts";
 import { parseScoreboard, parseSummary } from "./schemas.ts";
 import type { LiveSource } from "./source.ts";
+import { remember, type Stamped } from "./timeshift.ts";
 
 // The live data client (plan 9.2). It polls the scoreboard always and one game's summary
 // while that game is open, validates every response, and keeps the last good copy of
@@ -20,11 +21,19 @@ export interface Health {
   error: string | null;
 }
 
+/**
+ * `slate` and `game` are the newest data and are not for display: pages draw the delayed
+ * views that timeshift.ts makes from this state (plan 9.3).
+ */
 export interface FeedState {
   slate: LiveSlate | null;
+  /** Recent scoreboards, oldest first, for the delayed slate. */
+  slateHistory: Stamped<LiveSlate>[];
   slateHealth: Health;
   gameId: string | null;
   game: LiveGame | null;
+  /** Recent box scores of the open game, oldest first. */
+  boxHistory: Stamped<LiveBox | null>[];
   gameHealth: Health;
 }
 
@@ -36,7 +45,7 @@ function failed(h: Health, err: unknown): Health {
 
 export class LiveFeed {
   readonly source: LiveSource;
-  private state: FeedState = { slate: null, slateHealth: FRESH, gameId: null, game: null, gameHealth: FRESH };
+  private state: FeedState = { slate: null, slateHistory: [], slateHealth: FRESH, gameId: null, game: null, boxHistory: [], gameHealth: FRESH };
   private listeners = new Set<() => void>();
   private slatePoller: Poller;
   private gamePoller: Poller;
@@ -72,7 +81,7 @@ export class LiveFeed {
     if (id === this.state.gameId) return;
     this.gameAbort?.abort();
     this.firstSeen = new Map();
-    this.set({ gameId: id, game: null, gameHealth: FRESH });
+    this.set({ gameId: id, game: null, boxHistory: [], gameHealth: FRESH });
     this.gamePoller.stop();
     if (id) this.gamePoller.start();
   }
@@ -110,7 +119,7 @@ export class LiveFeed {
       const slate = normalizeScoreboard(parsed.value, this.source.now(), parsed.dropped);
       // A scoreboard that lost every game it had a moment ago is a bad answer, not news.
       if (slate.games.length === 0 && slate.dropped > 0) throw new Error("Unexpected scoreboard (no readable games)");
-      this.set({ slate, slateHealth: { status: "ok", lastOkAt: slate.fetchedAt, failures: 0, error: null } });
+      this.set({ slate, slateHistory: remember(this.state.slateHistory, slate.fetchedAt, { ...slate, fetchedAt: 0 }), slateHealth: { status: "ok", lastOkAt: slate.fetchedAt, failures: 0, error: null } });
     } catch (err) {
       this.set({ slateHealth: failed(this.state.slateHealth, err) });
       throw err;
@@ -132,7 +141,7 @@ export class LiveFeed {
       // Plays only ever accumulate. A copy with far fewer than the one we hold is a bad answer.
       const held = this.state.game;
       if (held && game.plays.length < held.plays.length - 5) throw new Error("ESPN answered with an older copy of the game");
-      this.set({ game, gameHealth: { status: "ok", lastOkAt: game.fetchedAt, failures: 0, error: null } });
+      this.set({ game, boxHistory: remember(this.state.boxHistory, game.fetchedAt, game.box), gameHealth: { status: "ok", lastOkAt: game.fetchedAt, failures: 0, error: null } });
     } catch (err) {
       // The user moved to another game while this was in flight: not a failure.
       if (abort.signal.aborted) return;

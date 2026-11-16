@@ -4,12 +4,12 @@ import { getTeam } from "../../../../shared/teams.ts";
 import type { Health } from "../../lib/espn/feed.ts";
 import { Badge, Card, Notice, PageHeader } from "../../ui/primitives.tsx";
 import css from "./Live.module.css";
-import { LiveProvider, useFeedState, useLiveFeed } from "./useLive.tsx";
+import { DelayBar } from "./DelayBar.tsx";
+import { LiveProvider, useDelayed, useFeedState, useLiveFeed } from "./useLive.tsx";
 
-// A bare first version, enough to prove the live client and the replay harness end to
-// end. It draws the feed's newest data directly, so THERE IS NO SPOILER DELAY YET: M2-2
-// replaces what these pages read with delayed views (plan 9.3), and M2-5 and M2-6 replace
-// the pages themselves.
+// A bare first version, enough to prove the live client, the replay harness and the
+// spoiler delay end to end. M2-5 and M2-6 replace these pages. Whatever they draw must
+// come from `useDelayed()` (plan 9.3), as it does here: never from the feed's newest data.
 export function LivePage() {
   return (
     <LiveProvider>
@@ -21,7 +21,7 @@ export function LivePage() {
   );
 }
 
-const PREVIEW = "Early version: no TV delay yet, so scores here can be ahead of your broadcast.";
+const PREVIEW = "Early version: scores and plays only. Set the delay to match your TV.";
 
 /** Plan 7.4: say ESPN is not answering, and leave the last data on screen. */
 function Retrying({ health }: { health: Health }) {
@@ -34,26 +34,28 @@ function Retrying({ health }: { health: Health }) {
 }
 
 function Slate() {
-  const { slate, slateHealth } = useFeedState();
+  const { slateHealth } = useFeedState();
+  const { slate } = useDelayed();
   const { search } = useLocation();
   return (
     <>
       <PageHeader title="Live" note={PREVIEW} />
       <div className={css.stack}>
+        <DelayBar />
         <Retrying health={slateHealth} />
         {!slate && slateHealth.status === "loading" && <Notice title="Loading games" />}
         {slate && slate.games.length === 0 && <Notice title="No games this week" />}
         {slate && slate.games.length > 0 && (
-          <Card title={slate.week ? `Week ${slate.week}` : "This week"} flush>
+          <Card title={slate.week ? `Week ${slate.week}` : "This week"} actions={slate.syncingSeconds !== null && <Badge tone="warn">syncing, {slate.syncingSeconds} s</Badge>} flush>
             <ul className={css.list}>
               {slate.games.map((g) => (
                 <li key={g.id}>
-                  <Link className={css.game} to={{ pathname: `game/${g.id}`, search }} data-game={g.id}>
+                  <Link className={css.game} to={{ pathname: `game/${g.id}`, search }} data-game={g.id} data-syncing={g.syncing}>
                     <span>
                       {getTeam(g.away).nickname} at {getTeam(g.home).nickname}
                     </span>
                     <span className={css.num}>{g.score ? `${g.score.away}–${g.score.home}` : ""}</span>
-                    <Badge tone={g.state === "in" ? "ok" : "neutral"}>{g.state === "in" ? `Q${g.period ?? ""} ${g.clock ?? ""}` : (g.detail ?? (g.state === "post" ? "Final" : "Upcoming"))}</Badge>
+                    <Badge tone={g.state === "in" && !g.syncing ? "ok" : "neutral"}>{g.syncing ? "syncing" : g.state === "in" ? `Q${g.period ?? ""} ${g.clock ?? ""}` : (g.detail ?? (g.state === "post" ? "Final" : "Upcoming"))}</Badge>
                   </Link>
                 </li>
               ))}
@@ -68,7 +70,8 @@ function Slate() {
 function Game() {
   const { id } = useParams();
   const feed = useLiveFeed();
-  const { game, gameHealth } = useFeedState();
+  const { gameHealth } = useFeedState();
+  const { game, cutoff } = useDelayed();
   const { search } = useLocation();
   useEffect(() => {
     feed.openGame(id ?? null);
@@ -76,22 +79,24 @@ function Game() {
   }, [feed, id]);
 
   const last = game?.plays.at(-1);
-  const status = !game ? "" : game.state === "pre" ? "Not started" : game.state === "post" ? "Final" : last ? `Q${last.period} ${last.clock}` : "Starting";
+  const status = !game ? "" : game.status === "pre" ? "Not started" : game.status === "final" ? "Final" : game.period ? `Q${game.period} ${game.clock}` : "Under way";
   return (
     <>
       <PageHeader title={game ? `${getTeam(game.away).nickname} at ${getTeam(game.home).nickname}` : "Game"} note={PREVIEW}>
         <Link to={{ pathname: "..", search }}>All games</Link>
       </PageHeader>
       <div className={css.stack}>
+        <DelayBar />
         <Retrying health={gameHealth} />
         {!game && gameHealth.status === "loading" && <Notice title="Loading game" />}
         {game && (
           <Card flush>
-            <div className={css.score} data-testid="score" data-state={game.state} data-last-play={last?.id ?? ""}>
+            <div className={css.score} data-testid="score" data-state={game.status} data-last-play={last?.id ?? ""} data-cutoff={Number.isFinite(cutoff) ? Math.floor(cutoff) : ""}>
               <span>{game.away}</span>
-              <strong className={css.num}>{last ? `${last.awayScore}–${last.homeScore}` : "0–0"}</strong>
+              <strong className={css.num}>{game.score ? `${game.score.away}–${game.score.home}` : "–"}</strong>
               <span>{game.home}</span>
-              <Badge tone={game.state === "in" ? "ok" : "neutral"}>{status}</Badge>
+              <Badge tone={game.status === "in" ? "ok" : "neutral"}>{status}</Badge>
+              {game.box.state === "syncing" && <Badge tone="warn">box score syncing, {game.box.seconds} s</Badge>}
             </div>
           </Card>
         )}

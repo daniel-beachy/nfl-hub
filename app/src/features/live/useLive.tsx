@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router";
 import { LiveFeed, type FeedState } from "../../lib/espn/feed.ts";
 import { loadReplay } from "../../lib/espn/replay.ts";
 import { espnSource } from "../../lib/espn/source.ts";
+import { cutoffFor, slateAt, viewAt, type GameView, type SlateView } from "../../lib/espn/timeshift.ts";
+import { usePrefs } from "../../lib/prefs.ts";
 import { Notice } from "../../ui/primitives.tsx";
 
 // One LiveFeed for the whole Live area, made when the area opens and stopped when it
@@ -55,7 +57,28 @@ export function useLiveFeed(): LiveFeed {
   return feed;
 }
 
+/** The feed's raw state: the newest data. Only for health notices and for calibration; pages draw `useGameView` and `useSlateView`. */
 export function useFeedState(): FeedState {
   const feed = useLiveFeed();
   return useSyncExternalStore(feed.subscribe, feed.getState);
+}
+
+/** The feed's clock, re-read about once a (game) second, so delayed plays appear on time between polls. */
+export function useNow(): number {
+  const feed = useLiveFeed();
+  const [now, setNow] = useState(() => feed.source.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(feed.source.now()), Math.max(100, 1000 / feed.source.speed));
+    return () => clearInterval(timer);
+  }, [feed]);
+  return now;
+}
+
+/** What the viewer may see right now, given the delay in preferences (plan 9.3). */
+export function useDelayed(): { now: number; cutoff: number; game: GameView | null; slate: SlateView | null } {
+  const { game, boxHistory, slateHistory } = useFeedState();
+  const { liveDelaySeconds, liveDelayOn } = usePrefs();
+  const now = useNow();
+  const cutoff = cutoffFor(now, liveDelaySeconds, liveDelayOn);
+  return { now, cutoff, game: game ? viewAt(game, cutoff, boxHistory) : null, slate: slateAt(slateHistory, cutoff) };
 }

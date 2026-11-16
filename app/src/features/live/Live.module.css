@@ -52,3 +52,56 @@ li:first-child > .game {
   color: var(--text-faint);
   font-size: var(--text-xs);
 }
+.delay {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+.nudge {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+.nudge button,
+.sync {
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.nudge button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.syncPanel {
+  padding: 0 var(--space-4) var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.syncPanel p {
+  padding: var(--space-3) 0 var(--space-2);
+  max-width: 44rem;
+}
+.syncPlay {
+  display: grid;
+  gap: var(--space-1);
+  width: 100%;
+  padding: var(--space-3) 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.syncPlay:hover {
+  background: var(--surface-2);
+}
