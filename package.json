@@ -21,7 +21,8 @@
     "model": "tsx pipeline/model/stage.ts",
     "compile": "tsx pipeline/compile.ts",
     "e2e": "npm run build && playwright test",
-    "leaders": "tsx pipeline/leaders.ts"
+    "leaders": "tsx pipeline/leaders.ts",
+    "live-fixture": "tsx scripts/live-fixture.ts"
   },
   "dependencies": {
     "d3-scale": "^4.0.3",

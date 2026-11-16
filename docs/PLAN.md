@@ -304,6 +304,8 @@ One-off script `pipeline/import-v3.ts` converts the ten real weekly snapshots in
 - Every response is zod-validated. A bad response is dropped and the last good one stays on screen.
 - All requests go through `fetchJson(baseUrl, path)` so a proxy can be introduced later by configuration.
 
+Built in M2-1 (`app/src/lib/espn/`) with three refinements: with no game live the scoreboard is asked again at the next kickoff or after 5 min, whichever is sooner; a finished game's summary is fetched once and not polled; and validation has two levels, a strict frame (drop the response) and lenient list items (drop the item, count it).
+
 ### 9.3 Spoiler delay [F]
 
 One mechanism for everything on screen, so nothing can leak:
@@ -430,7 +432,7 @@ Checkpoint: Dan uses the season view for a week. If accepted: retire v3 (section
 
 | # | Task | Who | Done when |
 |---|---|---|---|
-| M2-1 | ESPN live client and schemas | F | Survives malformed payloads in tests |
+| M2-1 ✅ | ESPN live client and schemas | F | Survives malformed payloads in tests (2026-11-16: `app/src/lib/espn/`, described in `docs/SOURCES.md` "ESPN live games". `LiveFeed` in `feed.ts` is the client; pages use it through the views of M2-2, never directly. Tests in `espn.test.ts` on three real recorded responses, including 500 random mutations of a game. Built and checked on finished and not-yet-started games only: the in-progress shape is unverified, see SOURCES) |
 | M2-2 | Time-shift buffer, cold start, calibration | F | Replay test proves no element shows data newer than the delay |
 | M2-3 | EP table builder and EPA estimator, validated | F | `docs/LIVE-MODEL.md` reports the numbers against the targets |
 | M2-4 | Replay harness and fixture game | F | `?replay=` works locally and in Playwright |
