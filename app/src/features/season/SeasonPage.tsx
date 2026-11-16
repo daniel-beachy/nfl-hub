@@ -1,40 +1,89 @@
-import { useEffect, useState } from "react";
-import { seasonSeriesSchema, type SeasonSeries } from "../../../../shared/series.ts";
-import { loadData, type Loaded } from "../../lib/data.ts";
+import { CONFERENCES, DIVISION_NAMES } from "../../../../shared/ids.ts";
+import type { SeasonSeries } from "../../../../shared/series.ts";
+import { teamsInConference, teamsInDivision } from "../../../../shared/teams.ts";
 import { TeamMetricChart } from "../../ui/chart/TeamMetricChart.tsx";
-import { Notice, PageHeader } from "../../ui/primitives.tsx";
+import { Grid, Notice, PageHeader } from "../../ui/primitives.tsx";
+import { seasonList, useSeasonFiles, useSelectedSeason } from "./useSeason.ts";
+import css from "./SeasonPage.module.css";
 
-// M1-6 exemplar: two charts that prove the chart and source-tab pattern on real data.
-// M1-7 replaces this page with the full Outlook, Standings and Awards pages and the
-// season selector; build every chart there the way these two are built.
+// Season Outlook (plan 8.1): every team metric over the season, each chart with its own
+// source tabs (TeamMetricChart). A chart with no data for the season is left out by the
+// chart itself, so nothing here is ever empty. Standings, Awards and Leaders follow.
 
-const SEASON = 2026;
+const conf = (c: (typeof CONFERENCES)[number]) => teamsInConference(c).map((t) => t.id);
+
+function SeasonSelect({ season, onChange }: { season: number; onChange: (s: number) => void }) {
+  return (
+    <label className={css.select}>
+      <span>Season</span>
+      <select value={season} onChange={(e) => onChange(Number(e.target.value))}>
+        {seasonList().map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function Outlook({ daily, weekly }: { daily: SeasonSeries; weekly: SeasonSeries | null }) {
+  const files = { daily, weekly };
+  return (
+    <div className={css.stack}>
+      <TeamMetricChart title="Win the Super Bowl" metric="superBowl" {...files} />
+      <Grid min={30}>
+        {CONFERENCES.map((c) => (
+          <TeamMetricChart key={c} title={`Make the Super Bowl: ${c}`} metric="conference" teams={conf(c)} {...files} height={240} />
+        ))}
+      </Grid>
+      <h2 className={css.section}>Win the division</h2>
+      <Grid min={22}>
+        {CONFERENCES.flatMap((c) =>
+          DIVISION_NAMES.map((d) => (
+            <TeamMetricChart key={`${c} ${d}`} title={`${c} ${d}`} metric="division" teams={teamsInDivision(`${c} ${d}`).map((t) => t.id)} {...files} height={180} />
+          )),
+        )}
+      </Grid>
+      <Grid min={30}>
+        {CONFERENCES.map((c) => (
+          <TeamMetricChart key={c} title={`Make the playoffs: ${c}`} metric="playoffs" teams={conf(c)} {...files} height={240} />
+        ))}
+      </Grid>
+      <TeamMetricChart title="Projected wins" metric="wins" {...files} />
+      <Grid min={30}>
+        {CONFERENCES.map((c) => (
+          <TeamMetricChart key={c} title={`Earn the 1 seed: ${c}`} metric="seed1" teams={conf(c)} {...files} height={240} />
+        ))}
+      </Grid>
+    </div>
+  );
+}
 
 export function SeasonPage() {
-  const [daily, setDaily] = useState<Loaded<SeasonSeries> | null>(null);
-  const [weekly, setWeekly] = useState<Loaded<SeasonSeries> | null>(null);
-  useEffect(() => {
-    let live = true;
-    void loadData(`season/${SEASON}/series.json`, seasonSeriesSchema).then((r) => live && setDaily(r));
-    void loadData(`season/${SEASON}/weekly.json`, seasonSeriesSchema).then((r) => live && setWeekly(r));
-    return () => void (live = false);
-  }, []);
+  const [season, setSeason] = useSelectedSeason();
+  const files = useSeasonFiles(season);
+  const past = season < 2026;
 
   return (
     <>
-      <PageHeader title="Season" note={`${SEASON} championship odds and projected wins. More charts, standings, leaders and awards are still to come.`} />
-      {(daily === null || weekly === null) && <Notice title="Loading…" />}
-      {daily && weekly && daily.state !== "ok" && (
+      <PageHeader
+        title="Season"
+        note={
+          past
+            ? `${season} from the Hub Model only: odds were not captured before 2026, so these forecasts were computed afterwards from results known at the time.`
+            : `${season} championship, division and playoff odds, over the season.`
+        }
+      >
+        <SeasonSelect season={season} onChange={setSeason} />
+      </PageHeader>
+      {files === null && <Notice title="Loading…" />}
+      {files && files.daily.state !== "ok" && (
         <Notice tone="bad" title="Season numbers could not be loaded">
-          {daily.state === "missing" ? "The season file has not been published yet." : daily.message}
+          {files.daily.state === "missing" ? `Nothing has been published for ${season} yet.` : files.daily.message}
         </Notice>
       )}
-      {daily?.state === "ok" && weekly !== null && (
-        <div style={{ display: "grid", gap: "var(--space-3)" }}>
-          <TeamMetricChart title="Win the Super Bowl" metric="superBowl" daily={daily.data} weekly={weekly.state === "ok" ? weekly.data : null} />
-          <TeamMetricChart title="Projected wins" metric="wins" daily={daily.data} weekly={weekly.state === "ok" ? weekly.data : null} />
-        </div>
-      )}
+      {files?.daily.state === "ok" && <Outlook key={season} daily={files.daily.data} weekly={files.weekly.state === "ok" ? files.weekly.data : null} />}
     </>
   );
 }

@@ -1,0 +1,29 @@
+.stack {
+  display: grid;
+  gap: var(--space-3);
+}
+.section {
+  margin-top: var(--space-3);
+  font-size: var(--text-lg);
+}
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.select select {
+  height: 2.25rem;
+  padding: 0 var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.select select:hover {
+  border-color: var(--border-strong);
+}

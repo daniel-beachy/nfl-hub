@@ -2,7 +2,7 @@ import type { SeriesSourceId, TeamMetric } from "../../../../shared/ids.ts";
 import type { SeasonSeries } from "../../../../shared/series.ts";
 import { TEAM_IDS, type TeamId } from "../../../../shared/teams.ts";
 import { setSourcePref, usePrefs } from "../../lib/prefs.ts";
-import { Badge, Card, Notice, Segmented } from "../primitives.tsx";
+import { Badge, Card, Segmented } from "../primitives.tsx";
 import { teamColor } from "../theme.ts";
 import { chooseSource, lastValue, nearestIndex, rangeIndexes, shortDate, SOURCE_INFO, sourcesWithData, staleSince, type Values } from "./model.ts";
 import { SourceTabs, type SourceTab } from "./SourceTabs.tsx";
@@ -53,13 +53,9 @@ export function TeamMetricChart({ title, metric, daily, weekly, teams = TEAM_IDS
   const available = range ? sourcesWithData(valuesBySource, range[0], range[1]) : [];
   const source = chooseSource(available, sources[prefKey]);
 
-  if (!range || !lastDate || !source) {
-    return (
-      <Card title={title}>
-        <Notice title="No numbers for this yet">Nothing has been captured for this chart in this season.</Notice>
-      </Card>
-    );
-  }
+  // No source has anything for this chart: draw nothing, so a page never shows an empty
+  // chart or a "not available" message (plan 8.2). The page simply has one chart fewer.
+  if (!range || !lastDate || !source) return null;
 
   const tabs: SourceTab[] = available.map((id) => {
     const last = blocks[id]!.availability.lastDate;

@@ -31,7 +31,7 @@ test("every source and stage in status.json has a row with its status", async ({
   await expect(page.locator("[data-stage]")).toHaveCount(status.stages.length);
   await expect(page.locator(`[data-source="${status.sources[0]!.id}"]`).getByRole("link", { name: "Issue #99" })).toHaveAttribute("href", /\/issues\/99$/);
   // The footer link reaches it from anywhere.
-  await page.goto("./#/season");
+  await page.goto("./#/season?season=2026");
   await page.getByRole("link", { name: "Data status" }).click();
   await expect(page).toHaveURL(/#\/status$/);
 });

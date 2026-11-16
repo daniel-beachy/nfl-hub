@@ -20,7 +20,7 @@ const linePath = (card: Locator, id: string) => card.locator(`svg g[data-line="$
 const pressed = (card: Locator, group: string, name: string) => card.getByRole("group", { name: group }).getByRole("button", { name, exact: true });
 
 async function open(page: Page) {
-  await page.goto("./#/season");
+  await page.goto("./#/season?season=2026");
   await expect(selectedTab(chartCard(page))).toBeVisible();
 }
 
