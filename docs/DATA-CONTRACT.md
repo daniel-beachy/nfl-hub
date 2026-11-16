@@ -213,3 +213,14 @@ Rules:
 - Every point has all 32 teams. Probabilities rounded to 4 decimals, wins to 2, ratings to 1.
 - The file for a season is recomputed only when its `inputHash` changes (a new result, a schedule change, new parameters or simulation count, or `MODEL_VERSION` in `stage.ts`); otherwise the previous file is kept as is.
 - The stage writes nothing unless every season succeeds. A season with no schedule yet (the new season, before the schedule is released in spring) is skipped without error; a past season with no schedule fails the stage.
+
+## 7. Stat leaders
+
+`data/season/{season}/leaders.json`, one per season since 2020, schema `shared/leaders.ts`, built by `pipeline/leaders.ts` (`npm run leaders`) in the daily workflow's `nflverse` job.
+
+- Source: nflverse `stats_player_week_{season}.parquet`, regular season (`season_type == "REG"`) only. Postseason stats are not counted.
+- Twelve categories, each one column summed over the season: passing, rushing and receiving yards, TDs and EPA, receptions, sacks (`def_sacks`) and interceptions (`def_interceptions`). EPA is nflverse's own per-player EPA.
+- Top 10 per category by total; ties broken by player id. A player with no value in a category is left out of it, so a category can have fewer than 10 (or none).
+- `weeks` are the regular-season weeks that have stats; `dates` the last game day of each week from `games.parquet`; every leader's `cumulative` aligns with them.
+- `team` is the team of the player's latest game that season, null if it is not one of our 32 ids.
+- Checked 2026-11-16: all 120 leader totals for 2025 equal nflverse's own `stats_player_reg_2025.parquet`.

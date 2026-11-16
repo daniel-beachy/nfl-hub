@@ -59,3 +59,15 @@ for (const season of [2026, 2022]) {
     await expect(page.locator('tr[data-team="KC"] td').first()).toHaveText(/^\d+\.\d$/);
   });
 }
+
+for (const season of [2026, 2022]) {
+  test(`leaders show every category and a season race for ${season}`, async ({ page }) => {
+    await page.goto(`./#/season/leaders?season=${season}`);
+    await expect(page.locator("ol[data-category]")).toHaveCount(12);
+    await expect(page.locator('ol[data-category="passingYards"] li')).toHaveCount(10);
+    const race = page.locator("section").filter({ has: page.getByRole("heading", { level: 2, name: "Season race" }) });
+    await expect(race.locator("svg g[data-line]")).toHaveCount(10);
+    await race.getByRole("combobox", { name: "Stat" }).selectOption("sacks");
+    await expect(race.getByRole("img")).toHaveAccessibleName(/^Sacks/);
+  });
+}

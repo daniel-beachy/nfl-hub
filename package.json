@@ -20,7 +20,8 @@
     "nflverse": "tsx pipeline/nflverse/stage.ts",
     "model": "tsx pipeline/model/stage.ts",
     "compile": "tsx pipeline/compile.ts",
-    "e2e": "npm run build && playwright test"
+    "e2e": "npm run build && playwright test",
+    "leaders": "tsx pipeline/leaders.ts"
   },
   "dependencies": {
     "d3-scale": "^4.0.3",

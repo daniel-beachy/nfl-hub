@@ -5,6 +5,7 @@ import { teamsInConference, teamsInDivision } from "../../../../shared/teams.ts"
 import { AwardChart, hasAward } from "../../ui/chart/AwardChart.tsx";
 import { TeamMetricChart } from "../../ui/chart/TeamMetricChart.tsx";
 import { Grid, Notice, PageHeader, Segmented } from "../../ui/primitives.tsx";
+import { Leaders } from "./Leaders.tsx";
 import { Standings } from "./Standings.tsx";
 import { seasonList, useSeasonFiles, useSelectedSeason } from "./useSeason.ts";
 import css from "./SeasonPage.module.css";
@@ -83,13 +84,13 @@ function Awards({ daily, weekly }: { daily: SeasonSeries; weekly: SeasonSeries |
   );
 }
 
-type View = "outlook" | "standings" | "awards";
+type View = "outlook" | "standings" | "leaders" | "awards";
 
-/** Outlook, Standings, Awards: only the views this season has data for, so none can be empty. */
+/** Outlook, Standings, Leaders, Awards: only the views this season has data for, so none can be empty. */
 function SubNav({ views }: { views: readonly { value: View; label: string }[] }) {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
-  const value: View = pathname.endsWith("/awards") ? "awards" : pathname.endsWith("/standings") ? "standings" : "outlook";
+  const value: View = (["standings", "leaders", "awards"] as const).find((v) => pathname.endsWith(`/${v}`)) ?? "outlook";
   if (views.length < 2) return null;
   return <Segmented label="Season view" options={views} value={value} onChange={(v) => navigate({ pathname: v === "outlook" ? "/season" : `/season/${v}`, search })} />;
 }
@@ -97,7 +98,7 @@ function SubNav({ views }: { views: readonly { value: View; label: string }[] })
 function Loaded({ season, daily, weekly }: { season: number; daily: SeasonSeries; weekly: SeasonSeries | null }) {
   const { search } = useLocation();
   const awards = AWARD_MARKETS.some((m) => hasAward(daily, m));
-  const views = [{ value: "outlook" as const, label: "Outlook" }, { value: "standings" as const, label: "Standings" }, ...(awards ? [{ value: "awards" as const, label: "Awards" }] : [])];
+  const views = [{ value: "outlook" as const, label: "Outlook" }, { value: "standings" as const, label: "Standings" }, { value: "leaders" as const, label: "Leaders" }, ...(awards ? [{ value: "awards" as const, label: "Awards" }] : [])];
   return (
     <>
       <div className={css.subnav}>
@@ -106,6 +107,7 @@ function Loaded({ season, daily, weekly }: { season: number; daily: SeasonSeries
       <Routes>
         <Route index element={<Outlook daily={daily} weekly={weekly} />} />
         <Route path="standings" element={<Standings season={season} />} />
+        <Route path="leaders" element={<Leaders season={season} />} />
         {awards && <Route path="awards" element={<Awards daily={daily} weekly={weekly} />} />}
         <Route path="*" element={<Navigate to={{ pathname: "/season", search }} replace />} />
       </Routes>

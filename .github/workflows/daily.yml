@@ -98,6 +98,10 @@ jobs:
         if: inputs.fail_job == 'nflverse'
         run: exit 1
       - run: npm run nflverse
+      # Stat leaders for every season since 2020 into derived/season/{season}/leaders.json
+      # (pipeline/leaders.ts). Past seasons come from the same cache; a failed season keeps
+      # its previous file and fails this job, so health opens a pipeline-broken issue.
+      - run: npm run leaders
       - name: Keep the downloaded files for the next run
         if: always() && hashFiles('cache/nflverse/**/*.parquet.json') != ''
         uses: actions/cache/save@v6
