@@ -17,7 +17,8 @@ import css from "./TeamMetricChart.module.css";
 //   - tabs are computed from the data, so a tab exists exactly when it has something to show;
 //   - the chosen source is remembered per metric and silently falls back when it has no data.
 
-export const formatPercent = (v: number) => `${(v * 100).toFixed(v > 0 && v < 0.1 ? 1 : 0)}%`;
+/** "18%", "6.8%", and "<0.1%" for a chance that is real but would round to zero. */
+export const formatPercent = (v: number) => (v > 0 && v < 0.0005 ? "<0.1%" : `${(v * 100).toFixed(v > 0 && v < 0.1 ? 1 : 0)}%`);
 export const formatWins = (v: number) => v.toFixed(1);
 
 const RESOLUTIONS: readonly { value: Resolution; label: string }[] = [{ value: "weekly", label: "Weekly" }, { value: "daily", label: "Daily" }];

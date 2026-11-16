@@ -48,3 +48,14 @@ test("the season selector switches season and keeps it in the URL", async ({ pag
   await page.reload();
   await expect(page.getByRole("combobox", { name: "Season" })).toHaveValue("2022");
 });
+
+for (const season of [2026, 2022]) {
+  test(`standings list all 32 teams with hub odds for ${season}`, async ({ page }) => {
+    await page.goto(`./#/season?season=${season}`);
+    await page.getByRole("group", { name: "Season view" }).getByRole("button", { name: "Standings" }).click();
+    await expect(page).toHaveURL(new RegExp(`#/season/standings\\?season=${season}$`));
+    await expect(page.locator("tr[data-team]")).toHaveCount(32);
+    await expect(page.getByText(/Hub Model as of/)).toBeVisible();
+    await expect(page.locator('tr[data-team="KC"] td').first()).toHaveText(/^\d+\.\d$/);
+  });
+}

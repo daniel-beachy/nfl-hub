@@ -1,0 +1,77 @@
+.note {
+  margin-bottom: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+.scroll {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-2);
+  text-align: right;
+  white-space: nowrap;
+}
+.table thead th {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.table thead th:first-child,
+.table tbody th[scope="row"],
+.division th {
+  text-align: left;
+  padding-left: var(--space-4);
+}
+.table td:last-child,
+.table thead th:last-child {
+  padding-right: var(--space-4);
+}
+.division th {
+  padding-top: var(--space-3);
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.table tbody tr[data-team] {
+  border-top: 1px solid var(--border);
+}
+.table tr[data-favorite="true"] {
+  background: var(--surface-2);
+}
+.team {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+.swatch {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  flex: none;
+}
+.nick {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+@media (max-width: 480px) {
+  .nick {
+    display: none;
+  }
+}
+.table tbody th[scope="row"] {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+  font-size: var(--text-sm);
+}
