@@ -66,7 +66,7 @@ Assumed from general knowledge, not checked here:
 
 ## Things I would look at harder with more time
 
-- Whether the time-shift buffer is over-built. Truncating plays by `wallclock` and deriving score from the last visible play might be enough on its own, and simpler.
+- Whether the time-shift buffer is over-built. Truncating plays by `wallclock` and deriving score from the last visible play might be enough on its own, and simpler. (Settled 2026-11-16: it was over-built. `PLAN.md` 9.3 now cuts by `wallclock` and buffers only the box score and the slate.)
 - Whether daily snapshots in the offseason are worth it, or weekly would do from March to August.
 - Whether the Season area should also show per-game odds for the coming week; ESPN's scoreboard carries DraftKings lines and a `predictor` endpoint exists. Not in the plan.
 - Defense and special teams are absent from Players. Dan asked only for QB, RB and WR.

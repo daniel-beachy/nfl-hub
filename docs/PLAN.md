@@ -308,13 +308,16 @@ Built in M2-1 (`app/src/lib/espn/`) with three refinements: with no game live th
 
 ### 9.3 Spoiler delay [F]
 
-One mechanism for everything on screen, so nothing can leak:
+One mechanism for everything on screen, so nothing can leak. **Decided 2026-11-16, replacing the original time-shift buffer of whole payloads: cut the newest data by `wallclock`, and buffer only the two things that cannot be cut.**
 
-- A **time-shift buffer** stores each fetched scoreboard and summary payload with its fetch time. The UI renders the payload from `now - delay`, never the newest one. Scores, clock, box score, win probability and plays are therefore all consistently delayed.
-- **Cold start:** when the page opens there is no history yet. Until the buffer covers the delay, show the newest summary truncated to plays whose `wallclock <= now - delay`, derive score and situation from the last visible play, and hide the box score and slate scores behind "syncing, 40 s".
-- **Calibration:** "Sync to my TV" shows the last few plays; Dan taps the one that just happened on screen, and the delay becomes `now - thatPlay.wallclock`. Fine-tune with plus and minus 5 s buttons. Stored in `localStorage`, shown permanently in the header ("delayed 38 s"), with a one-tap "live" switch.
-- The delay also applies to the document title, notifications and any cached values.
-- Known limit, to state in the UI: if ESPN's feed is itself behind the broadcast, the app cannot be ahead of it; the delay can only hold data back.
+- **The cut.** One pure function, `viewAt(game, cutoff)` with `cutoff = now - delay`, turns the newest game into what the viewer may see: the plays released by then, the score, clock and situation of the last of them, win probability for those plays only, a drive's result only once that drive is over for the viewer, and "final" only when every play is visible. Pages are given views and nothing else; the newest `LiveGame` never reaches a component. That is the one mechanism.
+- **Why not buffer payloads.** (1) Every ESPN play carries the score after it and a `wallclock` (checked on a real game), so everything except the box score can be derived for any past moment. (2) Calibration is defined on `wallclock` (`delay = now - play.wallclock`). A buffer keyed by fetch time would add ESPN's own feed lag on top of the calibrated delay and run late. (3) Cold start, a reload mid-game, replay and post-game all become the same code path as the steady state, instead of a second mechanism that must agree with the first. (4) A play ESPN later corrects is shown corrected.
+- **What cannot be cut:** the box score (running totals with no times) and the other games on the slate (the scoreboard has no plays). For these two only, the feed keeps a short history of copies stamped with fetch time, and the view shows the newest copy fetched at or before the cutoff. Until one exists it shows "syncing, 40 s" in their place. Shown at once, because they cannot be ahead: anything when the delay is off; the box score of a game that is final for the viewer; a slate game that has not started or kicked off more than 6 hours before the cutoff.
+- **Delay off ("live")** means no cutoff at all, not `cutoff = now`, so a device clock that runs slow cannot hide plays.
+- **Calibration:** "Sync to my TV" shows the last few plays; Dan taps the one that just happened on screen, and the delay becomes `now - thatPlay.wallclock`. Fine-tune with plus and minus 5 s buttons. Stored in `localStorage`, shown permanently in the header ("delayed 38 s"), with a one-tap "live" switch. The calibration list necessarily shows undelayed plays; it says so.
+- The delay also applies to the document title, notifications and any cached values: build them from a view.
+- Costs accepted: the box score trails the plays by ESPN's feed lag plus up to one poll; the clock shown is the last play's, not a ticking one.
+- Known limit, to state in the UI: if ESPN's feed is itself behind the broadcast, the app cannot be ahead of it; the delay can only hold data back. The device clock matters too, since it is compared with ESPN's `wallclock`; calibration absorbs a wrong clock.
 
 ### 9.4 Live EPA estimator [F]
 
@@ -441,7 +444,7 @@ Checkpoint: Dan uses the season view for a week. If accepted: retire v3 (section
 | # | Task | Who | Done when |
 |---|---|---|---|
 | M2-1 ✅ | ESPN live client and schemas | F | Survives malformed payloads in tests (2026-11-16: `app/src/lib/espn/`, described in `docs/SOURCES.md` "ESPN live games". `LiveFeed` in `feed.ts` is the client; pages use it through the views of M2-2, never directly. Tests in `espn.test.ts` on three real recorded responses, including 500 random mutations of a game. Built and checked on finished and not-yet-started games only: the in-progress shape is unverified, see SOURCES) |
-| M2-2 | Time-shift buffer, cold start, calibration | F | Replay test proves no element shows data newer than the delay |
+| M2-2 | Spoiler delay: views cut by wallclock, box and slate history, calibration (9.3) | F | Replay test proves no element shows data newer than the delay (2026-11-16: design decided, see 9.3; not built. To build: `app/src/lib/espn/timeshift.ts` with `viewAt` and a slate view; box and slate history in `LiveFeed`; a `liveDelayOn` preference beside `liveDelaySeconds`; the Live pages switched from `useFeedState` to views; a delay bar with Sync to my TV; a unit test that walks the fixture game and a Playwright test that compare what is shown with the fixture at the cutoff) |
 | M2-3 | EP table builder and EPA estimator, validated | F | `docs/LIVE-MODEL.md` reports the numbers against the targets |
 | M2-4 ✅ | Replay harness and fixture game | F | `?replay=` works locally and in Playwright (2026-11-16: see 9.5. Checked in the browser against the real ESPN API as well) |
 | M2-5 | Slate page | O | Correct for a live window, checked by replay |
@@ -480,4 +483,4 @@ Checkpoint: Dan browses players.
 - **Hub model quality.** It is a simple results-only model and will lag markets on injuries. It is labeled as a model and is one tab among several.
 - **Live EPA accuracy.** Unknown until M2-3 measures it; the plan states the fallback.
 - **Kalshi coverage** was checked in M0-7 (2026-11-13): every team metric, 1 seed and all seven awards, but no 2026 win totals. `docs/SOURCES.md` has the series list.
-- **Things not verified in planning:** (`hyparquet` against nflverse files and the play-by-play column names were verified in M0-8); whether ESPN `wallclock` is close enough to broadcast time for calibration to feel right; Sunday HQ's logged-in flow (out of scope).
+- **Things not verified in planning:** (`hyparquet` against nflverse files and the play-by-play column names were verified in M0-8); whether ESPN `wallclock` is close enough to broadcast time for calibration to feel right; the shape of an ESPN game in progress (`docs/SOURCES.md`; `scripts/record-live.ts` was started for the 2026-11-16 Monday night game and writes `tmp/live-recordings/401873065/report.json`); Sunday HQ's logged-in flow (out of scope).
