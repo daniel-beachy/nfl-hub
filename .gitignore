@@ -5,3 +5,5 @@ tmp/
 derived/
 .claude/
 cache/
+test-results/
+playwright-report/

@@ -19,3 +19,14 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      # Browser smoke suite (playwright.config.ts) against the build above, at 360 and 1280 px.
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

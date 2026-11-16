@@ -19,7 +19,8 @@
     "doctor": "tsx pipeline/doctor.ts",
     "nflverse": "tsx pipeline/nflverse/stage.ts",
     "model": "tsx pipeline/model/stage.ts",
-    "compile": "tsx pipeline/compile.ts"
+    "compile": "tsx pipeline/compile.ts",
+    "e2e": "npm run build && playwright test"
   },
   "dependencies": {
     "d3-scale": "^4.0.3",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@types/d3-scale": "^4.0.9",
     "@types/d3-shape": "^3.2.0",
     "@types/node": "^26.6.6",

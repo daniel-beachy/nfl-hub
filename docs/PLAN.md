@@ -89,7 +89,7 @@ Exact endpoints live in `docs/SOURCES.md` (task M0-9), one section per source wi
 
 - **App:** Vite, React, TypeScript, React Router with hash routing (no Pages 404 tricks). No CSS framework; CSS variables and CSS modules. Charts are our own SVG components on `d3-scale` and `d3-shape` (full control of the 32-line charts and field diagrams, and no chart-library upgrades to break).
 - **Pipeline:** TypeScript run with `tsx` on Node 24, in the same repo, sharing types and `zod` schemas with the app. Parquet read with `hyparquet` (proved in M0-8: nflverse files are Snappy-compressed and read natively, so the `.csv.gz` fallback was not needed).
-- **Tests:** Vitest for units and adapter contract tests, Playwright for a small smoke suite at phone and desktop widths.
+- **Tests:** Vitest for units and adapter contract tests, Playwright for a small smoke suite at phone and desktop widths (`e2e/`, Chromium only, against `vite preview` with real data files from `e2e/fixtures/` served under `/data/`; `npm run e2e`).
 - Keep runtime dependencies to roughly: `react`, `react-dom`, `react-router`, `d3-scale`, `d3-shape`, `zod`. Justify anything else in the PR.
 
 ### 5.2 Repo layout
@@ -419,7 +419,7 @@ Checkpoint: Dan sees a bare status page listing every source green, and three da
 | M1-3 ✅ | Import v3 2026 snapshots | O | Ten dates present; spot-check three values per source against v3's live site (2026-11-15: eleven files, see 8.4; 15 values spot-checked against v3's data file, all match) |
 | M1-4 ✅ | `compile.ts`: series, weekly, consensus | O | Unit tests for alignment, gaps and consensus (2026-11-15: `pipeline/compile.test.ts`; rules in `docs/DATA-CONTRACT.md` 3.1, including how consensus avoids mixing raw and de-vigged values) |
 | M1-5 ✅ | Design system: tokens, themes, layout shell, navigation, favorite team | F | Looks right at 360, 768, 1280 in both themes (2026-11-15: built in `app/src/ui/` with preferences in `app/src/lib/prefs.ts`; everything is on one page at `#/styleguide`. Not yet reviewed by Dan. Playwright is not installed yet; M1-6 adds it) |
-| M1-6 (built, test missing) | `TimeSeriesChart` and `SourceTabs` with the state model in 8.2 | F | Switching source preserves isolation, zoom and scroll; verified by a Playwright test (2026-11-15: built in `app/src/ui/chart/`, see 8.2. Checked by hand in the browser on real data: isolation, span, resolution and scroll survive a source switch, the choice is remembered, a remembered source without data falls back. **Still to do: install Playwright and write that test; the info popover and compare mode were not checked by hand.**) |
+| M1-6 ✅ | `TimeSeriesChart` and `SourceTabs` with the state model in 8.2 | F | Switching source preserves isolation, zoom and scroll; verified by a Playwright test (2026-11-15: built in `app/src/ui/chart/`, see 8.2. `e2e/season-chart.spec.ts` checks at 360 and 1280 px that a source switch keeps isolated teams, span, resolution, the tapped day and scroll, that the choice survives a reload and silently falls back when its data goes, that the info popover and compare mode work, and that a remembered tab at the end of the row is scrolled into view. `npm run e2e`; runs in CI) |
 | M1-7 | Outlook, Standings, Awards pages | O | All charts in 8.1 render for 2026 and 2022 |
 | M1-8 | Leaders pipeline and page | O | 2025 final leaders match nflverse totals |
 | M1-9 | Status page and stale markers | O | Matches `status.json` |

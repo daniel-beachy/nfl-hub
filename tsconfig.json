@@ -18,5 +18,5 @@
     "noEmit": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["app", "pipeline", "shared", "*.ts", "*.js"]
+  "include": ["app", "pipeline", "shared", "e2e", "*.ts", "*.js"]
 }

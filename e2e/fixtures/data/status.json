@@ -1,0 +1,155 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-11-15T23:08:37.715Z",
+ "overall": "degraded",
+ "season": 2026,
+ "sources": [
+  {
+   "id": "espn-fpi",
+   "name": "ESPN FPI",
+   "kind": "forecast",
+   "tier": "standard",
+   "status": "ok",
+   "lastOk": "2026-11-15",
+   "consecutiveFailures": 0,
+   "error": null,
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 32,
+    "playoffs": 32,
+    "wins": 32
+   },
+   "issue": null
+  },
+  {
+   "id": "draftkings",
+   "name": "DraftKings",
+   "kind": "market",
+   "tier": "standard",
+   "status": "ok",
+   "lastOk": "2026-11-15",
+   "consecutiveFailures": 0,
+   "error": null,
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 32,
+    "playoffs": 32,
+    "mvp": 25,
+    "opoy": 25,
+    "dpoy": 25,
+    "oroy": 25,
+    "droy": 25,
+    "coy": 11,
+    "cpoy": 25
+   },
+   "issue": null
+  },
+  {
+   "id": "polymarket",
+   "name": "Polymarket",
+   "kind": "market",
+   "tier": "standard",
+   "status": "ok",
+   "lastOk": "2026-11-15",
+   "consecutiveFailures": 0,
+   "error": null,
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 32,
+    "playoffs": 32,
+    "mvp": 25,
+    "opoy": 25,
+    "dpoy": 25,
+    "oroy": 5,
+    "droy": 8,
+    "coy": 9,
+    "cpoy": 6
+   },
+   "issue": null
+  },
+  {
+   "id": "kalshi",
+   "name": "Kalshi",
+   "kind": "market",
+   "tier": "standard",
+   "status": "ok",
+   "lastOk": "2026-11-15",
+   "consecutiveFailures": 0,
+   "error": null,
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 32,
+    "playoffs": 32,
+    "seed1": 32,
+    "mvp": 25,
+    "opoy": 25,
+    "dpoy": 25,
+    "oroy": 25,
+    "droy": 25,
+    "coy": 25,
+    "cpoy": 20
+   },
+   "issue": null
+  },
+  {
+   "id": "bovada",
+   "name": "Bovada",
+   "kind": "market",
+   "tier": "bonus",
+   "status": "partial",
+   "lastOk": "2026-11-14",
+   "consecutiveFailures": 1,
+   "error": {
+    "kind": "empty-response",
+    "message": "nfl-awards: Empty response from https://www.bovada.lv/services/sports/event/coupon/events/A/description/football/nfl-awards?lang=en",
+    "httpStatus": null,
+    "detail": "nfl-awards"
+   },
+   "coverage": {
+    "division": 28,
+    "wins": 13
+   },
+   "issue": null
+  }
+ ],
+ "stages": [
+  {
+   "id": "capture",
+   "status": "ok",
+   "lastOk": "2026-11-15T23:08:37.715Z",
+   "detail": "snapshot for 2026-11-15 written",
+   "issue": null
+  },
+  {
+   "id": "nflverse",
+   "status": "ok",
+   "lastOk": "2026-11-15T23:08:37.715Z",
+   "detail": "pbp 2026 updated 2026-11-15T22:03:39Z; 6 files loaded",
+   "issue": null
+  },
+  {
+   "id": "model",
+   "status": "ok",
+   "lastOk": "2026-11-15T23:08:37.715Z",
+   "detail": "2026: latest forecast as of 2026-11-13 (week 10), 9 completed weeks; games updated 2026-11-15T22:01:29Z",
+   "issue": null
+  },
+  {
+   "id": "compile",
+   "status": "ok",
+   "lastOk": "2026-11-15T23:08:37.715Z",
+   "detail": "workflow job ended: success",
+   "issue": null
+  }
+ ],
+ "dataFreshness": {
+  "snapshots": "2026-11-15",
+  "pbp": "2026-11-15",
+  "model": "2026-11-13"
+ },
+ "runUrl": "https://github.com/daniel-beachy/nfl-hub/actions/runs/43772971701"
+}
