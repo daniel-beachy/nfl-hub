@@ -477,6 +477,8 @@ Checkpoint: Dan browses players.
 
 ## 14. Risks and open items
 
+- **ESPN's live feed is about 45 s behind real time** (measured 2026-11-16: median 43 s, 19 to 89 s). The spoiler delay can only hold data back, so on a TV that is less than that behind (antenna, most cable) the page trails the broadcast and nothing can fix it from ESPN's summary endpoint. Streaming services are usually further behind and can be matched. Worth Dan's attention at the M2 checkpoint; a faster source would be a new decision.
+
 - **ESPN changes or blocks browser access.** Live would break. Mitigation: validated client, degraded state, and the proxy seam. Not mitigated in advance beyond that.
 - **nflverse changes file names or columns.** Mitigation: column presence checks per file and per-metric degradation; a core-tier health check.
 - **GitHub schedule delays or a disabled schedule.** Mitigation: idempotent runs, two schedules a day, daily commits, and a freshness check in `status.json` that the app surfaces if snapshots are more than 2 days old.
@@ -484,4 +486,4 @@ Checkpoint: Dan browses players.
 - **Hub model quality.** It is a simple results-only model and will lag markets on injuries. It is labeled as a model and is one tab among several.
 - **Live EPA accuracy.** Unknown until M2-3 measures it; the plan states the fallback.
 - **Kalshi coverage** was checked in M0-7 (2026-11-13): every team metric, 1 seed and all seven awards, but no 2026 win totals. `docs/SOURCES.md` has the series list.
-- **Things not verified in planning:** (`hyparquet` against nflverse files and the play-by-play column names were verified in M0-8); whether ESPN `wallclock` is close enough to broadcast time for calibration to feel right; the shape of an ESPN game in progress (`docs/SOURCES.md`; `scripts/record-live.ts` was started for the 2026-11-16 Monday night game and writes `tmp/live-recordings/401873065/report.json`); Sunday HQ's logged-in flow (out of scope).
+- **Things not verified in planning:** (`hyparquet` against nflverse files and the play-by-play column names were verified in M0-8); whether ESPN `wallclock` is close enough to broadcast time for calibration to feel right; kickoff, halftime and overtime of an ESPN game as they happen (the rest of the in-progress shape was checked on 2026-11-16, `docs/SOURCES.md`); Sunday HQ's logged-in flow (out of scope).
