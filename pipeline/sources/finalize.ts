@@ -51,6 +51,32 @@ const issue = (kind: Issue["kind"], message: string, detail?: string): Issue => 
   kind, message, httpStatus: null, ...(detail !== undefined && { detail }),
 });
 
+/** A team at or above this chance to win its division is all but in the playoffs. */
+export const SETTLED_IN_DIVISION = 0.9;
+/** A team at or below this chance to win the Super Bowl is all but out. */
+export const SETTLED_OUT_SUPER_BOWL = 0.002;
+
+/**
+ * Teams missing from `playoffs` whose other values from the same source say the question is
+ * all but settled: 1 when in (division at least 0.9; a division winner always qualifies), 0 when
+ * out (Super Bowl at most 0.002). Empty when `playoffs` itself is missing.
+ */
+export function settledPlayoffTeams(metrics: Map<TeamMetric, Map<TeamId, number>>): Map<TeamId, 0 | 1> {
+  const out = new Map<TeamId, 0 | 1>();
+  const playoffs = metrics.get("playoffs");
+  if (!playoffs || playoffs.size === 0) return out;
+  const division = metrics.get("division");
+  const superBowl = metrics.get("superBowl");
+  for (const team of ALL_TEAMS) {
+    if (playoffs.has(team)) continue;
+    const d = division?.get(team);
+    const sb = superBowl?.get(team);
+    if (d !== undefined && d >= SETTLED_IN_DIVISION) out.set(team, 1);
+    else if (sb !== undefined && sb <= SETTLED_OUT_SUPER_BOWL) out.set(team, 0);
+  }
+  return out;
+}
+
 export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: AdapterCtx): FinalizedBlock {
   if (parsed.season !== null && parsed.season !== ctx.season) {
     throw new SourceError("season-mismatch", `${adapter.name} is serving season ${parsed.season}, expected ${ctx.season}`);
@@ -136,6 +162,20 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
       values.clear();
     }
   };
+  // Books pull the playoffs line of a team that is all but in or out (DraftKings dropped BUF at
+  // 98% on 2026-11-16). A missing team counts as settled, not missing, when the same source's
+  // own values say so. Nothing is written for it; `raw` records 1 (in) or 0 (out).
+  const settled = settledPlayoffTeams(metrics);
+  for (const [team, value] of settled) raw[`playoffsSettled.${team}`] = value;
+  const playoffValues = metrics.get("playoffs");
+  if (playoffValues && settled.size > 0 && playoffValues.size + settled.size === ALL_TEAMS.length) {
+    const sum = [...playoffValues.values(), ...settled.values()].reduce((s, v) => s + v, 0);
+    raw.playoffsSum = round(sum, 4);
+    if (!inRange(sum, PLAYOFF_SUM_RANGE)) {
+      issues.push(issue("bad-sum", `playoffs sums to ${round(sum, 2)} counting ${settled.size} settled team(s), expected about 14`, "playoffs"));
+      playoffValues.clear();
+    }
+  }
   checkTotal("playoffs", PLAYOFF_SUM_RANGE, 14);
   checkTotal("wins", WINS_SUM_RANGE, TOTAL_WINS);
 
@@ -183,7 +223,8 @@ export function finalize(adapter: SourceAdapter, parsed: ParsedSource, ctx: Adap
   const mentioned = new Set(issues.map((i) => i.detail));
   for (const metric of adapter.expects.teams) {
     const have = coverage[metric] ?? 0;
-    if (have === ALL_TEAMS.length || mentioned.has(metric)) continue;
+    const pulled = metric === "playoffs" && have > 0 ? settled.size : 0;
+    if (have + pulled === ALL_TEAMS.length || mentioned.has(metric)) continue;
     issues.push(
       have === 0
         ? issue("market-missing", `No ${metric} values`, metric)

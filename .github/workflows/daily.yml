@@ -204,7 +204,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment-retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -221,5 +221,15 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+      # GitHub's artifact lookup sometimes lags the upload ("No artifacts named github-pages
+      # were found", 2026-11-20 and 11-21): the data was fine and the next run deployed it.
+      # One retry after a minute; a second failure fails the job as before.
       - id: deployment
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Wait before retrying the deploy
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 60
+      - id: deployment-retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v5

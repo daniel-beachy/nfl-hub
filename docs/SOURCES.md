@@ -14,7 +14,7 @@ Coverage below was recorded live on 2026-11-13 (season 2026, after week 9), with
 | `kalshi` | standard | market | superBowl, conference, division, playoffs, seed1 (32 each) | all seven (cpoy 20) |
 | `bovada` | bonus | market | superBowl, conference, division (32 each); also playoffs 27, seed1 24, wins 19 | all seven (oroy 22) |
 
-"Healthy" for every source means `status: "ok"` in the snapshot block, which requires every metric in the adapter's `expects` at 32 teams, every expected award present, complete groups summing to 0.95 to 1.6 before normalization, playoffs summing to 12 to 17 and wins to 245 to 299 when all 32 teams are present. A block with less is `partial`; a block with nothing usable is `error`.
+"Healthy" for every source means `status: "ok"` in the snapshot block, which requires every metric in the adapter's `expects` at 32 teams, every expected award present, complete groups summing to 0.95 to 1.6 before normalization, playoffs summing to 12 to 17 and wins to 245 to 299 when all 32 teams are present. A team a book has pulled from playoffs because it is all but in or out counts as present (DATA-CONTRACT 2.2 step 5a). A block with less is `partial`; a block with nothing usable is `error`.
 
 ## ESPN FPI (`espn-fpi`)
 
@@ -30,7 +30,7 @@ Coverage below was recorded live on 2026-11-13 (season 2026, after week 9), with
 - **Requests:** `GET https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/{season}/futures?limit=100` (23 markets, one page), then `GET .../seasons/{season}/athletes/{id}` once per award favorite (the top 25 of each award, deduplicated: about 140 requests, 6 at a time, about 1.5 s in total).
 - **Fields read:** `items[].$ref` (season), `items[].name`, `items[].futures[0].books[]` with `value` (American odds as a string, `+170`) and `team.$ref` or `athlete.$ref`; from each athlete, `displayName` and `team.$ref`.
 - **Market names used:** `NFL - Super Bowl Winner`, `Pro Football (A) Conference Winner`, `Pro Football (N) Conference - Winner`, `Pro Football (A) East  Division - Winner` (double space), `Pro Football (N) West Division` (no "Winner"), `NFL - To Make the Playoffs`, `Regular Season MVP`, `Offensive Player of the Year`, `Defensive Player of the Year`, `Offensive Rookie of the Year`, `Defensive Rookie of the Year`, `Coach of the Year`, `Comeback Player of the Year`. Ignored: stat-leader markets and "Team To Win Most Games".
-- **Healthy:** every team metric at 32, every award present, raw sums about 1.05 to 1.21 (the book's margin). "To Make the Playoffs" quotes only the yes side, so playoffs stay raw (sum 14.5 on 2026-11-13).
+- **Healthy:** every team metric at 32, every award present, raw sums about 1.05 to 1.21 (the book's margin). "To Make the Playoffs" quotes only the yes side, so playoffs stay raw (sum 14.5 on 2026-11-13). From 2026-11-16 it pulls near-certain teams from that market (BUF at 98%); those count as settled, not missing.
 - **Watch for:** no odds timestamp (`observedAt` is null). Coaches are athletes with no team. A failed athlete lookup drops that candidate and makes the block `partial` with the athlete id in the issue. Candidates have `playerId: null`; ESPN athlete ids can be joined to nflverse `gsis_id` through the nflverse `players` file later.
 
 ## Polymarket (`polymarket`)

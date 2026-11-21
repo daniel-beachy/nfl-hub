@@ -120,7 +120,7 @@ A team name or code that `shared/teams.ts` cannot map, or (DraftKings) an athlet
 
 ### team-coverage
 
-A metric has fewer than 32 teams. **In December and January this is often real:** teams clinch or are eliminated and some books pull those markets. Polymarket and Kalshi keep settled markets (as 1 or 0); DraftKings and Bovada drop them. If a source keeps a metric below 32 for good, take it out of `expects` (it is still captured and counted in `coverage`) and note it in `docs/SOURCES.md`.
+A metric has fewer than 32 teams. **From mid-November this is often real:** teams clinch or are eliminated, or come close enough, and some books pull those markets. Polymarket and Kalshi keep settled markets (as 1 or 0); DraftKings and Bovada drop them. For `playoffs` this is handled: a missing team the same source has at 0.9 or more to win its division, or at 0.002 or less to win the Super Bowl, counts as settled and raises nothing (`raw.playoffsSettled.{TEAM}`, DATA-CONTRACT 2.2 step 5a; DraftKings pulled BUF at 98% on 2026-11-16). A `team-coverage` on `playoffs` therefore means a missing team that is not settled by those rules: look at its values in the block before changing anything. If a source keeps a metric below 32 for good, take it out of `expects` (it is still captured and counted in `coverage`) and note it in `docs/SOURCES.md`.
 
 ### out-of-range
 
@@ -184,7 +184,7 @@ gh run view <run-id> --log-failed
   - *Unsupported compression*: nflverse changed parquet codec. Add `hyparquet-compressors` and pass its `compressors` to `parquetReadObjects` in `pipeline/nflverse/read.ts`.
   - *Incomplete download*: transient; the next run retries.
 - **health:** if `health.ts` crashes, status.json becomes a minimal `overall: "down"` file with one `health` stage error naming the exception, the job fails (the run shows red; no issue opens, since health is what opens issues) and deploy still runs. Read the `Health` step's log for the stack; reproduce with `npm run health -- --no-issues`. `fail_job=health` sets `HEALTH_FORCE_FAIL` to test this path.
-- **deploy:** runs `npm run check` and publishes. If it fails, `main` does not build: run `npm run check` locally and fix. The live site stays on the previous deploy.
+- **deploy:** runs `npm run check` and publishes. If the check fails, `main` does not build: run `npm run check` locally and fix. The live site stays on the previous deploy. If only `deploy-pages` fails with "No artifacts named github-pages were found", GitHub's artifact lookup lagged the upload; the step retries once after a minute, and if that fails too, re-run the job (`gh run rerun <id> --failed`) or wait for the next run.
 
 To test the failure path itself: `gh workflow run daily.yml -f fail_job=nflverse` (or `capture`, `health`).
 

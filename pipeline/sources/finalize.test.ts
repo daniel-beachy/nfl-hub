@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { teamsInDivision } from "../../shared/teams.ts";
+import { TEAM_IDS, teamsInDivision } from "../../shared/teams.ts";
 import { finalize, MAX_ISSUES } from "./finalize.ts";
 import { even, fakeAdapter, fullTeams, parsed } from "./testing.ts";
 
@@ -120,6 +120,51 @@ describe("finalize", () => {
     const b = finalize(market, parsed({ teams, playoffsNo: { KC: 0.21 } }), ctx);
     expect(b.teams.KC!.playoffs).toBe(0.8);
     expect(b.teams.BUF!.playoffs).toBe(0.4375);
+  });
+
+  describe("a pulled playoffs line of a settled team (2026-11-16, DraftKings and BUF)", () => {
+    // fullTeams: every team at 0.25 to win its division and 1/32 to win the Super Bowl.
+    test("a team the source has near-certain to win its division counts as in, and the block stays ok", () => {
+      const teams = fullTeams();
+      Object.assign(teams.division!, { BUF: 0.95, MIA: 0.02, NE: 0.02, NYJ: 0.01 });
+      for (const t of TEAM_IDS) teams.playoffs![t] = 13 / 31; // the other 31 carry the rest of 14 qualifiers ...
+      delete teams.playoffs!.BUF; // ... and BUF's line is gone
+      const b = finalize(market, parsed({ teams }), ctx);
+      expect([b.status, b.issues]).toEqual(["ok", []]);
+      expect(b.coverage.playoffs).toBe(31);
+      expect(b.teams.BUF!.playoffs).toBeUndefined(); // nothing is invented
+      expect(b.raw["playoffsSettled.BUF"]).toBe(1);
+      expect(b.raw.playoffsSum).toBe(14);
+    });
+
+    test("a team near zero to win the Super Bowl counts as out", () => {
+      const teams = fullTeams();
+      teams.superBowl!.TEN = 0.001;
+      teams.superBowl!.KC = 1 / 32 + (1 / 32 - 0.001);
+      for (const t of TEAM_IDS) teams.playoffs![t] = 14 / 31;
+      delete teams.playoffs!.TEN;
+      const b = finalize(market, parsed({ teams }), ctx);
+      expect(b.status).toBe("ok");
+      expect(b.raw["playoffsSettled.TEN"]).toBe(0);
+    });
+
+    test("a missing team that is not settled is still team-coverage", () => {
+      const teams = fullTeams();
+      delete teams.playoffs!.BUF;
+      const b = finalize(market, parsed({ teams }), ctx);
+      expect(b.error).toMatchObject({ kind: "team-coverage", detail: "playoffs" });
+      expect(b.raw["playoffsSettled.BUF"]).toBeUndefined();
+    });
+
+    test("the total is still checked, counting settled teams", () => {
+      const teams = fullTeams();
+      Object.assign(teams.division!, { BUF: 0.95, MIA: 0.02, NE: 0.02, NYJ: 0.01 });
+      for (const t of TEAM_IDS) teams.playoffs![t] = 0.9;
+      delete teams.playoffs!.BUF;
+      const b = finalize(market, parsed({ teams }), ctx);
+      expect(b.issues.map((i) => [i.kind, i.detail])).toEqual([["bad-sum", "playoffs"]]);
+      expect(b.coverage.playoffs).toBeUndefined();
+    });
   });
 
   test("awards are sorted, capped at 25 and never normalized", () => {
