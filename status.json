@@ -1,0 +1,170 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-11-27T23:24:40.786Z",
+ "overall": "degraded",
+ "season": 2026,
+ "sources": [
+  {
+   "id": "espn-fpi",
+   "name": "ESPN FPI",
+   "kind": "forecast",
+   "tier": "standard",
+   "status": "ok",
+   "lastOk": "2026-11-27",
+   "consecutiveFailures": 0,
+   "error": null,
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 32,
+    "playoffs": 32,
+    "wins": 32
+   },
+   "issue": null
+  },
+  {
+   "id": "draftkings",
+   "name": "DraftKings",
+   "kind": "market",
+   "tier": "standard",
+   "status": "partial",
+   "lastOk": "2026-11-22",
+   "consecutiveFailures": 5,
+   "error": {
+    "kind": "team-coverage",
+    "message": "division has 30 of 32 teams",
+    "httpStatus": null,
+    "detail": "division"
+   },
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 30,
+    "playoffs": 28,
+    "mvp": 21,
+    "opoy": 25,
+    "dpoy": 25,
+    "oroy": 23,
+    "droy": 25,
+    "coy": 11,
+    "cpoy": 19
+   },
+   "issue": 5
+  },
+  {
+   "id": "polymarket",
+   "name": "Polymarket",
+   "kind": "market",
+   "tier": "standard",
+   "status": "ok",
+   "lastOk": "2026-11-27",
+   "consecutiveFailures": 0,
+   "error": null,
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 32,
+    "playoffs": 32,
+    "mvp": 25,
+    "opoy": 25,
+    "dpoy": 25,
+    "oroy": 5,
+    "droy": 8,
+    "coy": 9,
+    "cpoy": 6
+   },
+   "issue": null
+  },
+  {
+   "id": "kalshi",
+   "name": "Kalshi",
+   "kind": "market",
+   "tier": "standard",
+   "status": "ok",
+   "lastOk": "2026-11-27",
+   "consecutiveFailures": 0,
+   "error": null,
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 32,
+    "playoffs": 32,
+    "seed1": 32,
+    "mvp": 25,
+    "opoy": 25,
+    "dpoy": 25,
+    "oroy": 25,
+    "droy": 25,
+    "coy": 25,
+    "cpoy": 20
+   },
+   "issue": null
+  },
+  {
+   "id": "bovada",
+   "name": "Bovada",
+   "kind": "market",
+   "tier": "bonus",
+   "status": "partial",
+   "lastOk": "2026-11-23",
+   "consecutiveFailures": 4,
+   "error": {
+    "kind": "team-coverage",
+    "message": "division has 23 of 32 teams",
+    "httpStatus": null,
+    "detail": "division"
+   },
+   "coverage": {
+    "superBowl": 32,
+    "conference": 32,
+    "division": 23,
+    "playoffs": 24,
+    "wins": 32,
+    "seed1": 16,
+    "mvp": 18,
+    "opoy": 25,
+    "dpoy": 25,
+    "oroy": 20,
+    "droy": 25,
+    "cpoy": 17
+   },
+   "issue": 6
+  }
+ ],
+ "stages": [
+  {
+   "id": "capture",
+   "status": "ok",
+   "lastOk": "2026-11-27T23:24:40.786Z",
+   "detail": "snapshot for 2026-11-27 written",
+   "issue": null
+  },
+  {
+   "id": "nflverse",
+   "status": "ok",
+   "lastOk": "2026-11-27T23:24:40.786Z",
+   "detail": "pbp 2026 updated 2026-11-27T21:38:34Z; 6 files loaded",
+   "issue": null
+  },
+  {
+   "id": "model",
+   "status": "ok",
+   "lastOk": "2026-11-27T23:24:40.786Z",
+   "detail": "2026: latest forecast as of 2026-11-28 (week 12), 11 completed weeks; games updated 2026-11-27T23:16:41Z",
+   "issue": null
+  },
+  {
+   "id": "compile",
+   "status": "ok",
+   "lastOk": "2026-11-27T23:24:40.786Z",
+   "detail": "workflow job ended: success",
+   "issue": null
+  }
+ ],
+ "dataFreshness": {
+  "snapshots": "2026-11-27",
+  "pbp": "2026-11-27",
+  "model": "2026-11-28"
+ },
+ "runUrl": "https://github.com/daniel-beachy/nfl-hub/actions/runs/46081764441"
+}

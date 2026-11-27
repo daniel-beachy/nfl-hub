@@ -1,0 +1,59 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-11-27T23:20:41.786Z",
+ "seasons": [
+  2025,
+  2026
+ ],
+ "files": [
+  {
+   "dataset": "pbp",
+   "season": 2025,
+   "name": "play_by_play_2025.parquet",
+   "updatedAt": "2026-11-25T18:44:35Z",
+   "size": 22156328,
+   "rows": 48771
+  },
+  {
+   "dataset": "pbp",
+   "season": 2026,
+   "name": "play_by_play_2026.parquet",
+   "updatedAt": "2026-11-27T21:38:34Z",
+   "size": 13408203,
+   "rows": 29177
+  },
+  {
+   "dataset": "stats_player",
+   "season": 2025,
+   "name": "stats_player_week_2025.parquet",
+   "updatedAt": "2026-11-25T18:47:23Z",
+   "size": 858910,
+   "rows": 19422
+  },
+  {
+   "dataset": "stats_player",
+   "season": 2026,
+   "name": "stats_player_week_2026.parquet",
+   "updatedAt": "2026-11-27T19:04:30Z",
+   "size": 577257,
+   "rows": 11612
+  },
+  {
+   "dataset": "games",
+   "season": null,
+   "name": "games.parquet",
+   "updatedAt": "2026-11-27T23:16:41Z",
+   "size": 524585,
+   "rows": 7548
+  },
+  {
+   "dataset": "players",
+   "season": null,
+   "name": "players.parquet",
+   "updatedAt": "2026-11-27T22:06:57Z",
+   "size": 3396724,
+   "rows": 24872
+  }
+ ],
+ "notPublished": []
+}
